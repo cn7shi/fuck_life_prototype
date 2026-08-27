@@ -557,7 +557,7 @@ export const App: React.FC = () => {
                   ? 'border-[#191C1E] bg-[#191C1E] text-white hover:bg-[#006875]'
                   : 'border-2 border-transparent hover:border-[#FFB3AF] hover:bg-[#FFB3AF] hover:text-[#68000E] text-[#FFB3AF]'
               }`}
-              title="打开系统侧边栏 (切换主题 / 导航)"
+              title="OPEN SYSTEM DRAWER (THEME MATRIX / NAV)"
             >
               <span className="material-symbols-outlined text-[20px] block leading-none">
                 menu
@@ -599,7 +599,7 @@ export const App: React.FC = () => {
                 ? 'bg-[#BA1A1A] text-white btn-chamfer border-none shadow-[2px_2px_0px_0px_#191C1E] hover:bg-[#93000A]'
                 : 'border-2 border-[#FFB3AF] bg-[#1F1F23] hover:bg-[#FFB3AF] hover:text-[#68000E] text-[#FFB3AF] shadow-[3px_3px_0px_0px_#FF5357] hover:shadow-[1px_1px_0px_0px_#FF5357]'
             }`}
-            title="撕毁当前赛季，彻底重开"
+            title="TEAR CURRENT SESSION // HARD REBOOT"
           >
             <span className={`font-bold tracking-wider uppercase ${
               isGothic
@@ -880,7 +880,7 @@ export const App: React.FC = () => {
                       value={diaryText}
                       onChange={(e) => setDiaryText(e.target.value)}
                       onPaste={handleDiaryPaste}
-                      placeholder="ENTER TACTICAL LOG DATA / RAW OBSERVATION (Ctrl+V 支持直接粘贴截图)..."
+                      placeholder="ENTER TACTICAL LOG DATA / RAW OBSERVATION (Ctrl+V supported)..."
                       rows={3}
                       className="w-full bg-[#F8F9FB] border border-[#D8DADC] text-[#191C1E] font-space p-3 text-xs focus:outline-none focus:border-[#191C1E] resize-none placeholder-[#76777B]"
                     />
@@ -1030,7 +1030,7 @@ export const App: React.FC = () => {
                       value={diaryText}
                       onChange={(e) => setDiaryText(e.target.value)}
                       onPaste={handleDiaryPaste}
-                      placeholder="WRITE DOWN RAW THOUGHTS & MOMENTS... (记录生活琐碎、灵感、情绪或直接粘贴截图)"
+                      placeholder="WRITE DOWN RAW THOUGHTS & MOMENTS (Ctrl+V supported)..."
                       rows={4}
                       className="w-full bg-[#131317] border-b-2 border-[#E4E1E7] text-[#E4E1E7] font-chivo p-3 text-sm focus:outline-none focus:border-[#FFB3AF] resize-none placeholder-[#5F3E3D]"
                     />
@@ -1557,7 +1557,7 @@ export const App: React.FC = () => {
                               whileHover={{ scale: 1.02 }}
                               whileTap={{ scale: 0.98 }}
                               className="bg-[#BA1A1A] text-white h-full px-4 flex items-center gap-1 font-mono-code text-xs font-bold uppercase absolute left-0 top-0 cursor-grab active:cursor-grabbing shadow-[2px_0px_6px_rgba(186,26,26,0.4)] transition-colors hover:bg-[#93000A]"
-                              title="向右滑动到底以斩杀目标"
+                              title="SLIDE RIGHT TO EXECUTE TARGET"
                             >
                               <span>EXECUTE</span>
                               <span>&gt;&gt;</span>
@@ -1644,7 +1644,7 @@ export const App: React.FC = () => {
                           <button
                             type="button"
                             onClick={(e) => handleToggleGoal(item.id, e)}
-                            title={item.killed ? '恢复目标' : '斩杀目标 (KILL)'}
+                            title={item.killed ? 'RESTORE TARGET' : 'KILL TARGET'}
                             className={`w-9 h-9 border-2 flex items-center justify-center shrink-0 font-anton text-lg transition-transform active:scale-95 ${
                               item.killed
                                 ? 'bg-[#FFB3AF] border-[#FFB3AF] text-[#68000E]'
@@ -1720,7 +1720,7 @@ export const App: React.FC = () => {
                             <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                               {logCount === 0 ? (
                                 <div className="text-[11px] font-mono-code text-[#5F3E3D] py-2 text-center">
-                                  还没有记录付出。今天哪怕只推进了 1%？随手写一条吧 ↘
+                                  NO EFFORT LOGGED YET. ADVANCE 1% TODAY ↘
                                 </div>
                               ) : (
                                 item.logs.map((log) => (
@@ -1752,7 +1752,7 @@ export const App: React.FC = () => {
                                     [item.id]: e.target.value,
                                   }))
                                 }
-                                placeholder="今天为它推进了什么小事 (1% EFFORT)..."
+                                placeholder="Log 1% progress note..."
                                 className="flex-1 bg-[#131317] border border-[#5F3E3D] text-[#E4E1E7] px-2.5 py-1.5 text-xs font-chivo focus:outline-none focus:border-[#FFB3AF] placeholder-[#5F3E3D]"
                               />
                               <button
@@ -1832,7 +1832,7 @@ export const App: React.FC = () => {
                           onChange={(e) => setNewSparkPriority(e.target.checked)}
                           className="accent-[#FF2442] w-3.5 h-3.5 cursor-pointer"
                         />
-                        <span>HIGH SANCTITY (圣物高优先级置顶)</span>
+                        <span>HIGH SANCTITY (PIN TO TOP)</span>
                       </label>
                     </div>
                   )}
@@ -1929,7 +1929,7 @@ export const App: React.FC = () => {
                             }}
                             onDoubleClick={() => handleStartEditSpark(spark)}
                             className="relative z-10 bg-[#08080C] border border-[#E8DCC4]/30 p-3.5 select-none cursor-grab active:cursor-grabbing hover:border-[#E8DCC4] transition-colors"
-                            title="双击进行编辑 · 左滑可销毁"
+                            title="DOUBLE CLICK TO EDIT · SWIPE LEFT TO PURGE"
                           >
                             {spark.isPriority && (
                               <div className="absolute top-3 right-3 border border-[#D4AF37] text-[#E8DCC4] px-1.5 py-0.5 font-mono-code text-[8px] font-bold uppercase tracking-wider bg-[#120D05]">
@@ -2068,7 +2068,7 @@ export const App: React.FC = () => {
                           onChange={(e) => setNewSparkPriority(e.target.checked)}
                           className="accent-[#BA1A1A] w-3.5 h-3.5 cursor-pointer"
                         />
-                        <span>HIGH PRIORITY (战术红色印章置顶)</span>
+                        <span>HIGH PRIORITY (RED STAMP PIN)</span>
                       </label>
                     </div>
                   )}
@@ -2165,7 +2165,7 @@ export const App: React.FC = () => {
                             }}
                             onDoubleClick={() => handleStartEditSpark(spark)}
                             className="relative z-10 bg-white border-2 border-[#191C1E] p-3.5 shadow-[4px_4px_0px_0px_#191C1E] select-none cursor-grab active:cursor-grabbing hover:border-[#006875] transition-colors"
-                            title="双击进行编辑 · 左滑可销毁"
+                            title="DOUBLE CLICK TO EDIT · SWIPE LEFT TO PURGE"
                           >
                             {/* 45° 战术红色印章 */}
                             {spark.isPriority && (
@@ -2302,7 +2302,7 @@ export const App: React.FC = () => {
                           onChange={(e) => setNewSparkPriority(e.target.checked)}
                           className="accent-[#FF5357] w-3.5 h-3.5 cursor-pointer"
                         />
-                        <span>HIGH PRIORITY (置顶)</span>
+                        <span>HIGH PRIORITY (PIN TO TOP)</span>
                       </label>
                     </div>
                   )}
@@ -3118,8 +3118,8 @@ export const App: React.FC = () => {
                   <p className={`font-mono-code text-xs mt-1 max-w-xs mx-auto leading-relaxed ${
                     isGothic ? 'text-[#888890]' : isWhite ? 'text-[#76777B]' : 'text-[#E9BCB9]'
                   }`}>
-                    [ VOID // 思想废料与虚空放逐区 ]<br />
-                    这个模块已预留席位，即将接入未经筛选的纯粹思想废料池与快速丢弃流。
+                    [ VOID // UNFILTERED COGNITIVE PURGE BUFFER ]<br />
+                    Module reserved for raw thought streams & instant disposal pipeline.
                   </p>
                 </div>
 

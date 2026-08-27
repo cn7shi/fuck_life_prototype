@@ -1,56 +1,71 @@
-# FUCK-LIFE // PROTO_V1
+# FUCK-LIFE // 个人生活记录软件的原型探索 (Interactive Prototype)
 
-> **The Anti-Gravity Interactive Life-Logging & Tactical Execution Prototype**  
-> *Street Cyber-Brutalism × Arknights PRTS White Terminal × Sacred Cyber-Gothic*
-
----
-
-## ? Overview
-
-**FUCK-LIFE // PROTO_V1** is an experimental, dual/tri-theme life-management & target-execution client prototype designed for intense daily tracking, brutalist journaling, and tactical goal purging.
-
-Built with **React 19 + TypeScript + Vite + Tailwind CSS + Framer Motion**, this prototype serves as the live design benchmark and gesture specification for the upcoming native mobile release.
+> **“记录生活琐碎，斩杀既定目标。”**  
+> 一款融合了 **街头赛博粗野朋克 (SYS_REBEL)** 与 **明日方舟战术机能白 (PRTS_WHITE)** 的生活记录与目标斩杀应用交互原型。
 
 ---
 
-## ?? Three Distinct Thematic Engines
+## ?? 项目定位与背景
 
-| Theme Matrix | Aesthetic Direction | Signature Interaction |
+本项目是未来原生移动端 App（Android / Kotlin Jetpack Compose）的 **前期视觉与交互动态探索原型**。
+
+在传统待办事项（To-Do）与日记软件千篇一律的极简白底黑字中，我们试图探索一种 **高视觉冲击力、高操作情绪价值、极具沉浸感** 的生活管理新范式。
+
+---
+
+## ?? 探索的核心设计语言
+
+本项目在同一个数据内核下，探索了三套完全不同交互心智与视觉灵魂的界面系统：
+
+| 主题模式 | 视觉体系 | 核心交互与情绪价值 |
 | :--- | :--- | :--- |
-| ?? **SYS_REBEL** | Street Cyberpunk Brutalism | Heavy offset shadows, brutalist raw torn paper effect, \KILLED\ red stamp override |
-| ? **PRTS_WHITE** | Rhodes Island Tactical Functionalism | Blueprint grid, tactical diamond timeline nodes, 5-stage energy cell gauges, **\EXECUTE >>\ slide-to-kill track** |
-| ?? **HEAVEN_GRIEF** | Sacred Cyber-Gothic & Divine Machinery | Cathedral archway altar portals, \CORRUPTED_HALO.TIF\ wireframe geometry, stigmata crosshair purge slider |
+| ?? **SYS_REBEL (赛博粗野朋克)** | 街头涂鸦、直角几何、硬阴影、打孔撕纸 | 粗暴直接的宣泄感，目标被斩杀时加盖大号 \KILLED\ 红色图章 |
+| ? **PRTS_WHITE (罗德岛战术协议白)** | 蓝图网格、折线时间轴、冷青高亮 | 严谨克制的机能感，**\EXECUTE >>\ 实体滑动斩杀轨道** 与 5 段高精度充能条 |
+| ?? **HEAVEN_GRIEF (先锋赛博哥特)** | 哥特尖拱神殿圣坛、神圣几何星云 | 庄重肃穆的仪式感，悼亡圣碑与十字圣痕天谴斩杀 |
 
 ---
 
-## ??? Core Functional Modules
+## ? 核心探索特性
 
-- **01. RAW_DIARY / LAMENT_DIARY**: Mixed multimedia stream with instant image paste (Ctrl+V) & evidence relic viewers.
-- **02. KILL_GOALS / JUDGMENT_ALTAR**: Interactive goal targets with multi-stage effort charge meters and physical draggable slide-to-kill tracks.
-- **03. RAW_SPARKS / SHATTERED_HALOS**: High-priority ideation cards with inline double-click editing and swipe-to-purge gestures.
-- **04. THE_VAULT / SANCTUM_RELIQUARY**: Level-5 classified archive with simulated Hex cipher encryption & decryption mechanics.
-- **05. PROTOCOL_OVERRIDE / TEAR_IT**: One-click session reboot easter-egg ("Party Like It's 2023").
+- **01. 滑动斩杀轨道 (Slide-to-Kill Protocol)**：
+  - 彻底摒弃传统复选框，采用类似开火扳机的物理滑动条（拖拽滑块超过阈值触发斩杀），极大强化完成目标的即时反馈。
+- **02. 灵感与情绪多图混排 (Frictionless Diary Stream)**：
+  - 支持直接剪贴板粘贴截图（Ctrl+V），与文字无缝混排，保留日常随手记的极低心理负担。
+- **03. 双击就地编辑与左滑极速销毁 (Tactical Gestures)**：
+  - 灵感碎片支持双击原地进入编辑态，横向滑动即可呼出红色销毁底轨。
+- **04. 绝密黑匣子加密视窗 (The Vault)**：
+  - 模拟 16 进制流与安全密室解密，保护最隐私的灵感与备忘。
+- **05. 撕纸彻底重开彩蛋 (Protocol Override)**：
+  - 随时一键执行重启协议，全屏触发撕裂动画与震动反馈。
 
 ---
 
-## ?? Local Development
+## ??? 后续演进路线
+
+- [x] **Phase 1: Web 交互与视觉原型验证**（React 19 + TypeScript + Vite + Tailwind CSS + Framer Motion）
+- [ ] **Phase 2: 安卓原生移动端开发**（Kotlin + Jetpack Compose + 真实线性马达震动反馈 + Room 本地加密数据库）
+- [ ] **Phase 3: 桌面快捷斩杀小组件**（Android Home Screen Widget）
+
+---
+
+## ?? 本地运行与体验
 
 `ash
-# Clone the repository
+# 克隆仓库
 git clone https://github.com/cn7shi/fuck_life_prototype.git
 
-# Install dependencies
+# 安装依赖
 npm install
 
-# Start local dev server
+# 启动本地开发服务
 npm run dev
 
-# Build for production
+# 构建生产版本
 npm run build
 `
 
 ---
 
-## ?? Deployment
+## ?? 线上托管
 
-Ready for 1-click deployment on **Vercel** or **Cloudflare Pages**.
+本项目可直接部署于 **Vercel** / **Cloudflare Pages** 作为动态交互设计稿在线预览。

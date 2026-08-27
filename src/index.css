@@ -1,0 +1,169 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #0E0E11;
+    color: #E4E1E7;
+    font-family: 'Chivo', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+.font-anton {
+  font-family: 'Anton', sans-serif;
+}
+
+.font-chivo {
+  font-family: 'Chivo', sans-serif;
+}
+
+.font-mono-code {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.font-space {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.font-bodoni {
+  font-family: 'Bodoni Moda', serif;
+}
+
+.font-cinzel {
+  font-family: 'Cinzel', serif;
+}
+
+/* ========================================================================= */
+/* 🌟 HEAVEN_GRIEF (先锋赛博神圣哥特样式) */
+/* ========================================================================= */
+.gothic-arch-top {
+  border-top-left-radius: 9999px;
+  border-top-right-radius: 9999px;
+}
+
+.gothic-arch-card {
+  border-top-left-radius: 40px;
+  border-top-right-radius: 40px;
+}
+
+.glow-crimson-laser {
+  box-shadow: 0 0 10px rgba(255, 36, 66, 0.5), 0 0 20px rgba(255, 36, 66, 0.2);
+}
+
+.glow-gold-wire {
+  box-shadow: 0 0 8px rgba(232, 220, 196, 0.2);
+}
+
+/* ========================================================================= */
+/* 🌟 PRTS_WHITE (明日方舟 / 众生行记战术机能白样式) */
+/* ========================================================================= */
+.bg-blueprint {
+  background-color: #f8f9fb;
+  background-image: linear-gradient(#d8dadc 1px, transparent 1px), linear-gradient(90deg, #d8dadc 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.btn-chamfer {
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+}
+
+.btn-chamfer-both {
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+}
+
+.crop-marks {
+  position: relative;
+}
+.crop-marks::before, .crop-marks::after {
+  content: '';
+  position: absolute;
+  border: 1.5px solid #191c1e;
+  width: 8px;
+  height: 8px;
+}
+.crop-marks::before {
+  top: -2px; left: -2px; border-right: none; border-bottom: none;
+}
+.crop-marks::after {
+  bottom: -2px; right: -2px; border-left: none; border-top: none;
+}
+
+.bg-dot-matrix {
+  background-image: radial-gradient(#76777b 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+
+.stamp-red {
+  transform: rotate(8deg);
+  border: 2px solid #ba1a1a;
+  color: #ba1a1a;
+  padding: 2px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* Brutalist Scanline & Grid Backgrounds */
+.scanline-bg {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0) 50%,
+    rgba(0, 0, 0, 0.35) 50%,
+    rgba(0, 0, 0, 0.35)
+  );
+  background-size: 100% 4px;
+}
+
+.brutalist-grid {
+  background-image: 
+    linear-gradient(to right, #2A2A2E 1px, transparent 1px),
+    linear-gradient(to bottom, #2A2A2E 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.glitch-hover:hover {
+  transform: translate(2px, -2px);
+  box-shadow: -4px 4px 0px 0px #FFB3AF;
+}
+
+@keyframes stampIn {
+  0% { opacity: 0; transform: scale(2.2) rotate(-25deg); }
+  100% { opacity: 0.95; transform: scale(1) rotate(-12deg); }
+}
+
+.stamp-animation {
+  animation: stampIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* ========================================================================= */
+/* 🌟 Cyber-Brutalist 极细暗黑硬边滚动条 (彻底融入暗黑高压氛围) */
+/* ========================================================================= */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #131317;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #343438;
+  border-radius: 0px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #FFB3AF;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #343438 #131317;
+}

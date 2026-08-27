@@ -51,7 +51,7 @@ interface VaultItem {
 export type ThemeMode = 'cyber_rebel' | 'prts_white' | 'heaven_grief';
 
 export const App: React.FC = () => {
-  const [theme, setTheme] = useState<ThemeMode>('heaven_grief');
+  const [theme, setTheme] = useState<ThemeMode>('prts_white');
   const [activeTab, setActiveTab] = useState<TabType>('diary');
   const [sessionId, setSessionId] = useState('994-ERR');
   const [isTearing, setIsTearing] = useState(false);

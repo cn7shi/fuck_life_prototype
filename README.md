@@ -16,7 +16,7 @@
 
 ## 🌐 在线体验 (Live Demo)
 
-- **Demo 链接**：`https://fuck-life-prototype.vercel.app` *(部署后可直接访问)*
+- **Demo 链接**：[https://fuck-life-prototype.vercel.app](https://fuck-life-prototype.vercel.app)
 
 ---
 

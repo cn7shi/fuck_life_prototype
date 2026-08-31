@@ -7,6 +7,9 @@ import {
   playRebootSound,
   playDecryptSound,
   toggleSound,
+  getSoundProfile,
+  setSoundProfile,
+  type SoundProfile,
 } from './utils/audio';
 
 type TabType = 'diary' | 'goals' | 'sparks' | 'vault' | 'shit';
@@ -67,6 +70,7 @@ export const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedPreviewImage, setSelectedPreviewImage] = useState<string | null>(null);
   const [soundActive, setSoundActive] = useState(true);
+  const [soundProfile, setSoundProfileState] = useState<SoundProfile>(getSoundProfile());
   const [isScreenShaking, setIsScreenShaking] = useState(false);
 
   const isWhite = theme === 'prts_white';
@@ -3500,44 +3504,86 @@ export const App: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* 🌟 声音设置 (SFX Audio Settings in Drawer) */}
-                  <div className={`p-2.5 border flex justify-between items-center ${
+                  {/* 🌟 声音设置与音效包切换 (SFX Audio Settings & 4 Sound Packs) */}
+                  <div className={`p-2.5 border space-y-2 ${
                     isGothic
                       ? 'bg-[#09090D] border-[#E8DCC4]/30'
                       : isWhite
                       ? 'bg-white border-[#191C1E] shadow-[3px_3px_0px_0px_#191C1E]'
                       : 'bg-[#1F1F23] border-[#343438] shadow-[3px_3px_0px_0px_#FFB3AF]'
                   }`}>
-                    <div className="flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-[16px]">
-                        {soundActive ? 'volume_up' : 'volume_off'}
-                      </span>
-                      <span className={`text-[10px] font-mono-code font-bold uppercase ${
-                        isGothic ? 'text-[#E8DCC4]' : isWhite ? 'text-[#191C1E]' : 'text-[#E9BCB9]'
-                      }`}>
-                        SOUND_SFX
-                      </span>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[16px]">
+                          {soundActive ? 'volume_up' : 'volume_off'}
+                        </span>
+                        <span className={`text-[10px] font-mono-code font-bold uppercase ${
+                          isGothic ? 'text-[#E8DCC4]' : isWhite ? 'text-[#191C1E]' : 'text-[#E9BCB9]'
+                        }`}>
+                          SOUND_SFX
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = toggleSound();
+                          setSoundActive(next);
+                          if (next) playClickSound();
+                        }}
+                        className={`font-mono-code text-[9px] px-2 py-0.5 font-bold uppercase transition-all cursor-pointer border ${
+                          soundActive
+                            ? isGothic
+                              ? 'bg-[#D4AF37] text-[#050508] border-[#D4AF37]'
+                              : isWhite
+                              ? 'bg-[#006875] text-white border-[#006875]'
+                              : 'bg-[#FF5357] text-white border-[#FF5357]'
+                            : 'bg-transparent border-[#76777B] text-[#76777B]'
+                        }`}
+                      >
+                        {soundActive ? '[ ENABLED ]' : '[ MUTED ]'}
+                      </button>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = toggleSound();
-                        setSoundActive(next);
-                        if (next) playClickSound();
-                      }}
-                      className={`font-mono-code text-[9px] px-2 py-0.5 font-bold uppercase transition-all cursor-pointer border ${
-                        soundActive
-                          ? isGothic
-                            ? 'bg-[#D4AF37] text-[#050508] border-[#D4AF37]'
-                            : isWhite
-                            ? 'bg-[#006875] text-white border-[#006875]'
-                            : 'bg-[#FF5357] text-white border-[#FF5357]'
-                          : 'bg-transparent border-[#76777B] text-[#76777B]'
-                      }`}
-                    >
-                      {soundActive ? '[ ENABLED ]' : '[ MUTED ]'}
-                    </button>
+                    {/* 4 种音效包实时切换 */}
+                    <div className="space-y-1 pt-1 border-t border-dashed border-gray-700/40">
+                      <div className={`text-[8px] font-mono-code uppercase flex justify-between ${
+                        isGothic ? 'text-[#888890]' : isWhite ? 'text-[#76777B]' : 'text-[#8E8E93]'
+                      }`}>
+                        <span>// SOUND_PACK</span>
+                        <span className="font-bold text-[#FF5357] uppercase">{soundProfile}</span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-1">
+                        {(
+                          [
+                            { id: 'cyber', label: 'CYBER' },
+                            { id: 'haptic', label: 'HAPTIC' },
+                            { id: 'analog', label: 'ANALOG' },
+                            { id: 'retro', label: '8-BIT' },
+                          ] as const
+                        ).map((pack) => (
+                          <button
+                            key={pack.id}
+                            type="button"
+                            onClick={() => {
+                              setSoundProfile(pack.id);
+                              setSoundProfileState(pack.id);
+                            }}
+                            className={`py-1 text-center font-mono-code text-[8px] font-bold uppercase transition-all cursor-pointer border ${
+                              soundProfile === pack.id
+                                ? isGothic
+                                  ? 'bg-[#E8DCC4] text-[#050508] border-[#E8DCC4]'
+                                  : isWhite
+                                  ? 'bg-[#191C1E] text-white border-[#191C1E]'
+                                  : 'bg-[#FF5357] text-[#131317] border-[#FF5357]'
+                                : 'bg-[#18181D] text-[#8E8E93] border-[#343438] hover:text-white'
+                            }`}
+                          >
+                            {pack.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
                   {/* 快捷板块导航 */}

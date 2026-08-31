@@ -1,9 +1,10 @@
-﻿// Cyberpunk & Sci-Fi Terminal Studio Audio Engine (真实赛博黑客终端与机能开源游戏音频引擎)
+﻿// Cyberpunk & Sci-Fi FUI/SFX Studio Audio Engine (赛博全息与黑客终端专业声效引擎)
 
 export type SoundProfile = 'cyber_terminal' | 'tactical_mech' | 'hacker_matrix' | 'kenney_clean';
 
 let soundEnabled = true;
 let currentProfile: SoundProfile = 'cyber_terminal';
+let clickToggle = 0;
 
 // 从 localStorage 读取用户选择的音效包，默认是 ⚡ cyber_terminal
 if (typeof window !== 'undefined') {
@@ -40,7 +41,7 @@ function getAudio(path: string): HTMLAudioElement {
   return oldest;
 }
 
-// 预加载所有赛博终端核心音频
+// 预加载所有核心 SFX 音频
 if (typeof window !== 'undefined') {
   const preloadList = [
     '/sounds/twoTone1.ogg',
@@ -59,6 +60,8 @@ if (typeof window !== 'undefined') {
     '/sounds/powerUp10.ogg',
     '/sounds/click_002.wav',
     '/sounds/switch12.wav',
+    '/sounds/drop_001.wav',
+    '/sounds/confirmation_001.wav',
   ];
 
   preloadList.forEach((src) => {
@@ -78,7 +81,7 @@ function playSoundFile(path: string, volume = 0.75) {
     const playPromise = audio.play();
     if (playPromise !== undefined) {
       playPromise.catch(() => {
-        // 自动播放策略保护
+        // 自动播放策略
       });
     }
   } catch {
@@ -108,21 +111,23 @@ export function setSoundProfile(profile: SoundProfile) {
 }
 
 // ============================================================================
-// 1. 点击 / 切换 TAB / 交互声 (真实赛博终端光标与全息脉冲)
+// 1. 点击 / TAB 切换 SFX (全息光标脉冲交替)
 // ============================================================================
 export function playClickSound() {
   if (!soundEnabled) return;
+  clickToggle = (clickToggle + 1) % 2;
+
   switch (currentProfile) {
     case 'cyber_terminal':
-      // 2077 HUD 全息数据脉冲滴答
-      playSoundFile('/sounds/twoTone1.ogg', 0.65);
+      // 2077 全息 HUD 光标脉冲
+      playSoundFile(clickToggle === 0 ? '/sounds/twoTone1.ogg' : '/sounds/twoTone2.ogg', 0.65);
       break;
     case 'tactical_mech':
-      // 机能战术金属快门
+      // 战术金属快门
       playSoundFile('/sounds/switch12.wav', 0.6);
       break;
     case 'hacker_matrix':
-      // 矩阵终端高频数据流
+      // 黑客数据流
       playSoundFile('/sounds/tone1.ogg', 0.55);
       break;
     case 'kenney_clean':
@@ -133,7 +138,7 @@ export function playClickSound() {
 }
 
 // ============================================================================
-// 2. 斩杀目标 / EXECUTE 协议达成声 (等离子斩击 / 重型装甲砸落)
+// 2. 斩杀目标 / EXECUTE SFX (双层等离子斩击 + 重型撞击)
 // ============================================================================
 export function playKillSound() {
   if (!soundEnabled) return;
@@ -141,14 +146,17 @@ export function playKillSound() {
     case 'cyber_terminal':
       // 赛博电浆等离子离子电火花斩杀 (Plasma Zap Strike)
       playSoundFile('/sounds/zap1.ogg', 0.85);
+      setTimeout(() => {
+        playSoundFile('/sounds/impactPlate_heavy_000.ogg', 0.4);
+      }, 30);
       break;
     case 'tactical_mech':
-      // 重型战术金属装甲猛烈夯击 (Heavy Armor Plate Slam)
+      // 重型战术金属装甲猛烈夯击
       playSoundFile('/sounds/impactPlate_heavy_000.ogg', 0.9);
       break;
     case 'hacker_matrix':
-      // 激光阵列熔断斩击 (Laser Target Vaporized)
-      playSoundFile('/sounds/laser1.ogg', 0.8);
+      // 激光阵列熔断处决
+      playSoundFile('/sounds/laser1.ogg', 0.85);
       break;
     case 'kenney_clean':
       playSoundFile('/sounds/drop_001.wav', 0.8);
@@ -157,21 +165,21 @@ export function playKillSound() {
 }
 
 // ============================================================================
-// 3. FUCK 撕毁 / 终端崩溃倾倒声 (Terminal Dump / Phaser Down Crash)
+// 3. FUCK 撕毁 / 终端崩溃停机 SFX
 // ============================================================================
 export function playTearSound() {
   if (!soundEnabled) return;
   switch (currentProfile) {
     case 'cyber_terminal':
       // 赛博神经链接过载熔断 (Phaser Overload Dump)
-      playSoundFile('/sounds/phaserDown1.ogg', 0.85);
+      playSoundFile('/sounds/phaserDown1.ogg', 0.9);
       break;
     case 'tactical_mech':
-      // 重型金属粉碎撕裂 (Heavy Metal Impact Tear)
+      // 重型金属粉碎撕裂
       playSoundFile('/sounds/impactMetal_heavy_000.ogg', 0.85);
       break;
     case 'hacker_matrix':
-      // 内存垃圾强制抹除 (Memory Buffer Purge)
+      // 内存垃圾强制抹除
       playSoundFile('/sounds/spaceTrash1.ogg', 0.8);
       break;
     case 'kenney_clean':
@@ -181,21 +189,21 @@ export function playTearSound() {
 }
 
 // ============================================================================
-// 4. 重开唤醒 / 跃迁上线声 (Cyber Warp / Neural Link Reconnected)
+// 4. 重开唤醒 / 跃迁上线 SFX
 // ============================================================================
 export function playRebootSound() {
   if (!soundEnabled) return;
   switch (currentProfile) {
     case 'cyber_terminal':
       // 神经跃迁引擎重启动能 (Phase Jump Warp)
-      playSoundFile('/sounds/phaseJump1.ogg', 0.85);
+      playSoundFile('/sounds/phaseJump1.ogg', 0.9);
       break;
     case 'tactical_mech':
-      // 罗德岛 PRTS 战术协议全系统充能 (Tactical Power Up)
+      // 罗德岛 PRTS 战术协议充能
       playSoundFile('/sounds/powerUp10.ogg', 0.85);
       break;
     case 'hacker_matrix':
-      // 矩阵核心超频上线 (Matrix Core Online)
+      // 矩阵核心超频上线
       playSoundFile('/sounds/powerUp7.ogg', 0.8);
       break;
     case 'kenney_clean':
@@ -205,9 +213,9 @@ export function playRebootSound() {
 }
 
 // ============================================================================
-// 5. 密文解密 / 黑客破解声 (Hacker Terminal Decrypt)
+// 5. 密文解密 / 黑客破解 SFX
 // ============================================================================
 export function playDecryptSound() {
   if (!soundEnabled) return;
-  playSoundFile('/sounds/threeTone1.ogg', 0.6);
+  playSoundFile('/sounds/threeTone1.ogg', 0.65);
 }

@@ -48,15 +48,17 @@ interface SparkItem {
   time?: string;
 }
 
-interface VaultItem {
+export type VaultType = 'link' | 'quote' | 'snippet' | 'media';
+
+export interface VaultItem {
   id: string;
-  logId: string;
+  type: VaultType;
   title: string;
   content: string;
-  rawSecret?: string;
+  sourceOrAuthor?: string;
+  imageUrl?: string;
   tags: string[];
-  encrypted?: boolean;
-  rotation: string;
+  time: string;
 }
 
 export type ThemeMode = 'cyber_rebel' | 'prts_white' | 'heaven_grief';
@@ -200,34 +202,55 @@ export const App: React.FC = () => {
     },
   ]);
 
-  // --- VAULT (SECURE ARCHIVES) STATE ---
+  // --- VAULT (WEB CLIPPINGS & INSPIRATION STASH) STATE ---
+  const [vaultFilter, setVaultFilter] = useState<'all' | VaultType>('all');
+  const [newVaultType, setNewVaultType] = useState<VaultType>('link');
   const [newVaultTitle, setNewVaultTitle] = useState('');
   const [newVaultContent, setNewVaultContent] = useState('');
+  const [newVaultSource, setNewVaultSource] = useState('');
+  const [newVaultImage, setNewVaultImage] = useState<string | null>(null);
   const [newVaultTags, setNewVaultTags] = useState('');
-  const [newVaultEncrypt, setNewVaultEncrypt] = useState(true);
   const [showVaultForm, setShowVaultForm] = useState(false);
   const [swipedVaultId, setSwipedVaultId] = useState<string | null>(null);
+  const [copiedSnippetId, setCopiedSnippetId] = useState<string | null>(null);
+  const vaultFileInputRef = useRef<HTMLInputElement>(null);
 
   const [vaultItems, setVaultItems] = useState<VaultItem[]>([
     {
       id: 'v-1',
-      logId: 'LOG_9942',
-      title: 'PROJECT CHIMAERA',
-      content: 'Initial test phase completed. Subject exhibited extreme resilience. Recommend immediate release of secondary protocols.',
-      rawSecret: 'Initial test phase completed. Subject exhibited extreme resilience. Recommend immediate release of secondary protocols.',
-      tags: ['ANOMALY', 'SECTOR_7'],
-      encrypted: false,
-      rotation: '',
+      type: 'link',
+      title: 'CYBERPUNK 2077 DESIGN BIBLE',
+      content: 'https://cyberpunk.net',
+      sourceOrAuthor: 'cyberpunk.net',
+      tags: ['INSPIRATION', 'UI_DESIGN'],
+      time: '2026.8.31 20:15',
     },
     {
       id: 'v-2',
-      logId: 'LOG_9945',
-      title: 'TARGET ZERO',
-      content: '0x7F 0x8A 0x22 0x1C 0x99 0xFF 0x4D 0x3E 0x11 0x0A 0x55 0x6B 0x7C 0x88 0x9F 0xAA 0xBB 0xCC',
-      rawSecret: 'The future is unwritten. Burn the old roadmap and construct from raw energy.',
-      tags: ['ENCRYPTED', 'RESTRICTED'],
-      encrypted: true,
-      rotation: '',
+      type: 'quote',
+      title: 'TACTICAL MENTALITY',
+      content: 'He who has a why to live can bear almost any how.',
+      sourceOrAuthor: 'Friedrich Nietzsche',
+      tags: ['PHILOSOPHY', 'RESOLVE'],
+      time: '2026.8.31 18:30',
+    },
+    {
+      id: 'v-3',
+      type: 'snippet',
+      title: 'ZERO-LATENCY AUDIO POOL',
+      content: 'const pool = audioPool[path];\nconst audio = pool.find(a => a.paused) || pool[0];\naudio.currentTime = 0;\naudio.play();',
+      sourceOrAuthor: 'TypeScript',
+      tags: ['DEV', 'WEB_AUDIO'],
+      time: '2026.8.31 16:40',
+    },
+    {
+      id: 'v-4',
+      type: 'link',
+      title: 'KENNEY CC0 GAME ASSETS',
+      content: 'https://kenney.nl/assets',
+      sourceOrAuthor: 'kenney.nl',
+      tags: ['AUDIO', 'RESOURCES'],
+      time: '2026.8.31 14:20',
     },
   ]);
 
@@ -461,7 +484,7 @@ export const App: React.FC = () => {
 
   const handleAddVaultItem = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newVaultTitle.trim() || !newVaultContent.trim()) return;
+    if (!newVaultTitle.trim() && !newVaultContent.trim()) return;
 
     playClickSound();
     const parsedTags = newVaultTags
@@ -469,27 +492,35 @@ export const App: React.FC = () => {
       .map((t) => t.trim().toUpperCase())
       .filter((t) => t.length > 0);
 
-    // 生成一组黑客风格的 Hex 乱码
-    const hexMask = Array.from({ length: 16 }, () =>
-      '0x' + Math.floor(Math.random() * 256).toString(16).toUpperCase().padStart(2, '0')
-    ).join(' ');
+    let autoSource = newVaultSource.trim();
+    if (newVaultType === 'link' && !autoSource && newVaultContent.trim()) {
+      try {
+        const url = new URL(
+          newVaultContent.startsWith('http') ? newVaultContent : `https://${newVaultContent}`
+        );
+        autoSource = url.hostname.replace('www.', '');
+      } catch {
+        autoSource = 'web.link';
+      }
+    }
 
     const newVault: VaultItem = {
       id: Date.now().toString(),
-      logId: `LOG_${Math.floor(Math.random() * 9000 + 1000)}`,
-      title: newVaultTitle.trim().toUpperCase(),
-      content: newVaultEncrypt ? hexMask : newVaultContent.trim(),
-      rawSecret: newVaultContent.trim(),
-      tags: parsedTags.length > 0 ? parsedTags : (newVaultEncrypt ? ['ENCRYPTED', 'CIPHER'] : ['ARCHIVE']),
-      encrypted: newVaultEncrypt,
-      rotation: '',
+      type: newVaultType,
+      title: newVaultTitle.trim().toUpperCase() || (newVaultType === 'link' ? autoSource.toUpperCase() : 'UNTITLED_CLIP'),
+      content: newVaultContent.trim(),
+      sourceOrAuthor: autoSource || (newVaultType === 'quote' ? 'ANONYMOUS' : undefined),
+      imageUrl: newVaultImage || undefined,
+      tags: parsedTags.length > 0 ? parsedTags : [newVaultType.toUpperCase()],
+      time: formatRealDateTime(),
     };
 
     setVaultItems([newVault, ...vaultItems]);
     setNewVaultTitle('');
     setNewVaultContent('');
+    setNewVaultSource('');
+    setNewVaultImage(null);
     setNewVaultTags('');
-    setNewVaultEncrypt(true);
     setShowVaultForm(false);
   };
 
@@ -499,26 +530,24 @@ export const App: React.FC = () => {
     setVaultItems((prev) => prev.filter((v) => v.id !== id));
   };
 
-  const handleDecryptVault = (id: string) => {
+  const handleCopySnippet = (id: string, text: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     playDecryptSound();
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      try {
-        navigator.vibrate(60);
-      } catch (e) {}
-    }
+    navigator.clipboard.writeText(text).catch(() => {});
+    setCopiedSnippetId(id);
+    setTimeout(() => setCopiedSnippetId(null), 2000);
+  };
 
-    setVaultItems((prev) =>
-      prev.map((v) => {
-        if (v.id === id && v.encrypted) {
-          return {
-            ...v,
-            encrypted: false,
-            content: `DECRYPTED: "${v.rawSecret || v.content}"`,
-          };
-        }
-        return v;
-      })
-    );
+  const handleVaultImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (reader.result) {
+        setNewVaultImage(reader.result as string);
+      }
+    };
+    reader.readAsDataURL(files[0]);
   };
 
   // 全局核心破坏仪式：TEAR IT (FUCK / 彻底撕毁重开)
@@ -2551,572 +2580,483 @@ export const App: React.FC = () => {
           })()}
 
           {/* ===================================================================== */}
-          {/* TAB 4: THE_VAULT (依据主题完全异构的加密黑匣子监视台) */}
+          {/* TAB 4: THE_VAULT (外链与灵感素材剪藏库 - 依主题完全异构) */}
           {/* ===================================================================== */}
-          {activeTab === 'vault' && (
-            isGothic ? (
-              /* ⚜️ HEAVEN_GRIEF 专属：先锋赛博神圣哥特 · 圣骸禁锢圣所 (Sanctum Reliquary) */
+          {activeTab === 'vault' && (() => {
+            const filteredVaultItems = vaultItems.filter((item) => {
+              if (vaultFilter === 'all') return true;
+              return item.type === vaultFilter;
+            });
+
+            return (
               <div className="space-y-4">
-                <div className="flex justify-between items-end border-b border-[#E8DCC4]/30 pb-2.5">
+                {/* 1. 标题与状态栏 */}
+                <div className={`flex justify-between items-end border-b-2 pb-2.5 ${
+                  isGothic
+                    ? 'border-[#E8DCC4]/30'
+                    : isWhite ? 'border-[#191C1E]' : 'border-dashed border-[#FFB3AF]'
+                }`}>
                   <div>
-                    <div className="font-mono-code text-[9px] text-[#E8DCC4]/70 tracking-widest uppercase">
-                      // 0XFA_CIPHER [LEVEL_5]
+                    <div className={`font-mono-code text-[9px] uppercase tracking-widest ${
+                      isGothic ? 'text-[#E8DCC4]/70' : isWhite ? 'text-[#76777B]' : 'text-[#E9BCB9]'
+                    }`}>
+                      {isGothic ? '// 0XFA_CLIPPINGS [SANCTUM_RELIQUARY]' : isWhite ? '[PRTS-004] // INTEL_CLIP_ARCHIVE' : '// NET_POCKET_v2.0 [RAW_STASH]'}
                     </div>
-                    <h2 className="font-bodoni text-2xl font-bold text-[#F5F5FA] tracking-wide mt-0.5">
-                      SANCTUM_RELIQUARY
+                    <h2 className={`text-2xl uppercase font-bold mt-0.5 ${
+                      isGothic ? 'font-bodoni text-[#F5F5FA]' : isWhite ? 'font-space text-[#191C1E]' : 'font-anton text-[#FFB3AF]'
+                    }`}>
+                      {isGothic ? 'SANCTUM_STASH' : isWhite ? 'INTEL_VAULT' : 'THE_VAULT'}
                     </h2>
                   </div>
-                  <div className="border border-[#FF2442] bg-[#120508] text-[#FF2442] px-2 py-0.5 font-mono-code text-[9px] font-bold flex items-center gap-1 uppercase">
-                    <span className="material-symbols-outlined text-[12px]">lock</span>
-                    SEALED
+                  <div className={`font-mono-code text-[9px] px-2 py-0.5 font-bold flex items-center gap-1 uppercase ${
+                    isGothic
+                      ? 'border border-[#D4AF37] bg-[#120D05] text-[#D4AF37]'
+                      : isWhite ? 'bg-[#191C1E] text-white' : 'bg-[#FF5357] text-[#5C000B]'
+                  }`}>
+                    <span className="material-symbols-outlined text-[12px]">bookmark</span>
+                    {vaultItems.length} CLIPS
                   </div>
                 </div>
 
-                {/* 圣所黑曜石核心监控部件 */}
-                <div className="p-3.5 border border-[#E8DCC4]/30 bg-[#09090D] glow-gold-wire space-y-2">
-                  <div className="flex justify-between items-center border-b border-[#E8DCC4]/15 pb-1 font-mono-code text-[10px] text-[#E8DCC4]">
-                    <span>SANCTUARY_CORE_TELEMETRY</span>
-                    <span className="text-[#FF2442] animate-pulse">SEAL_UNSTABLE</span>
-                  </div>
-                  <div className="font-mono-code text-[10px] space-y-1 text-[#888890]">
-                    <div className="flex justify-between">
-                      <span>ALTAR_CONTAINMENT</span> <span className="text-[#E8DCC4] font-bold">LOCKED (99.8%)</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>STIGMATA_RESONANCE</span> <span className="text-[#FF2442] font-bold">OVERHEAT // 404Hz</span>
-                    </div>
-                  </div>
-                  <div className="mt-2 flex gap-1 h-1.5">
-                    <div className="bg-[#E8DCC4] flex-1"></div>
-                    <div className="bg-[#D4AF37] flex-1"></div>
-                    <div className="bg-[#FF2442] flex-1"></div>
-                    <div className="bg-[#2A2A35] flex-1"></div>
-                  </div>
+                {/* 2. 类型筛选分类标签 (ALL / LINKS / QUOTES / SNIPPETS / MEDIA) */}
+                <div className="flex gap-1 overflow-x-auto pb-1 no-scrollbar text-xs font-mono-code">
+                  {[
+                    { id: 'all', label: `ALL (${vaultItems.length})`, icon: 'apps' },
+                    { id: 'link', label: `LINKS (${vaultItems.filter(v => v.type === 'link').length})`, icon: 'link' },
+                    { id: 'quote', label: `QUOTES (${vaultItems.filter(v => v.type === 'quote').length})`, icon: 'format_quote' },
+                    { id: 'snippet', label: `CODE (${vaultItems.filter(v => v.type === 'snippet').length})`, icon: 'terminal' },
+                    { id: 'media', label: `MEDIA (${vaultItems.filter(v => v.type === 'media').length})`, icon: 'image' },
+                  ].map((filter) => (
+                    <button
+                      key={filter.id}
+                      type="button"
+                      onClick={() => {
+                        playClickSound();
+                        setVaultFilter(filter.id as any);
+                      }}
+                      className={`px-2.5 py-1 text-[10px] font-bold uppercase transition-all whitespace-nowrap cursor-pointer flex items-center gap-1 border ${
+                        vaultFilter === filter.id
+                          ? isGothic
+                            ? 'bg-[#E8DCC4] text-[#050508] border-[#E8DCC4] shadow-[0_0_8px_rgba(232,220,196,0.3)]'
+                            : isWhite
+                            ? 'bg-[#191C1E] text-white border-[#191C1E]'
+                            : 'bg-[#FF5357] text-[#131317] border-[#FF5357] shadow-[2px_2px_0px_0px_#131317]'
+                          : isGothic
+                          ? 'border-[#E8DCC4]/30 text-[#888890] hover:text-[#E8DCC4]'
+                          : isWhite
+                          ? 'border-[#D8DADC] bg-white text-[#76777B] hover:text-[#191C1E]'
+                          : 'border-[#343438] bg-[#18181D] text-[#8E8E93] hover:text-[#FFB3AF]'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[13px]">{filter.icon}</span>
+                      <span>{filter.label}</span>
+                    </button>
+                  ))}
                 </div>
 
-                {/* 存入机密表单 */}
-                <div className="p-3.5 space-y-2.5 bg-[#0A0A0F] border border-[#E8DCC4]/30">
+                {/* 3. 快速存入新剪藏表单 */}
+                <div className={`p-3 space-y-2.5 border ${
+                  isGothic
+                    ? 'bg-[#0A0A0F] border-[#E8DCC4]/30 glow-gold-wire'
+                    : isWhite
+                    ? 'bg-white border-2 border-[#191C1E] shadow-[4px_4px_0px_0px_#191C1E]'
+                    : 'bg-[#1F1F23] border-2 border-[#FFB3AF] shadow-[4px_4px_0px_0px_#FFB3AF]'
+                }`}>
                   <div className="flex justify-between items-center">
-                    <span className="font-mono-code text-[10px] text-[#E8DCC4] font-bold">
-                      // ENCRYPT_INTO_SANCTUM
+                    <span className={`font-mono-code text-[10px] font-bold uppercase ${
+                      isGothic ? 'text-[#E8DCC4]' : isWhite ? 'text-[#191C1E]' : 'text-[#FFB3AF]'
+                    }`}>
+                      // NEW_CLIP_STASH
                     </span>
                     <button
                       type="button"
-                      onClick={() => setShowVaultForm(!showVaultForm)}
-                      className="font-mono-code text-[10px] px-2 py-0.5 transition-colors cursor-pointer border border-[#E8DCC4]/30 bg-[#050508] text-[#E8DCC4] hover:border-[#E8DCC4]"
+                      onClick={() => {
+                        playClickSound();
+                        setShowVaultForm(!showVaultForm);
+                      }}
+                      className={`font-mono-code text-[10px] px-2 py-0.5 transition-colors cursor-pointer border ${
+                        isGothic
+                          ? 'border-[#E8DCC4]/30 bg-[#050508] text-[#E8DCC4] hover:border-[#E8DCC4]'
+                          : isWhite
+                          ? 'border-[#D8DADC] bg-[#F8F9FB] text-[#191C1E] hover:border-[#191C1E]'
+                          : 'border-[#5F3E3D] text-[#E9BCB9] hover:text-[#FFB3AF] hover:border-[#FFB3AF]'
+                      }`}
                     >
-                      {showVaultForm ? '[-] HIDE_PANEL ▲' : '[+] NEW_CIPHER ▾'}
+                      {showVaultForm ? '[-] COLLAPSE ▲' : '[+] ADD_CLIP ▾'}
                     </button>
                   </div>
 
                   {showVaultForm && (
-                    <form onSubmit={handleAddVaultItem} className="space-y-2.5 pt-1 border-t border-[#E8DCC4]/15">
+                    <form onSubmit={handleAddVaultItem} className={`space-y-2.5 pt-2 border-t ${
+                      isGothic ? 'border-[#E8DCC4]/15' : isWhite ? 'border-[#D8DADC]' : 'border-dashed border-[#5F3E3D]'
+                    }`}>
+                      {/* 类型切换 Tabs */}
+                      <div className="grid grid-cols-4 gap-1">
+                        {[
+                          { id: 'link', label: 'LINK', icon: 'link' },
+                          { id: 'quote', label: 'QUOTE', icon: 'format_quote' },
+                          { id: 'snippet', label: 'CODE', icon: 'terminal' },
+                          { id: 'media', label: 'MEDIA', icon: 'image' },
+                        ].map((t) => (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => {
+                              playClickSound();
+                              setNewVaultType(t.id as VaultType);
+                            }}
+                            className={`py-1.5 font-mono-code text-[9px] font-bold uppercase transition-all cursor-pointer flex flex-col items-center justify-center border ${
+                              newVaultType === t.id
+                                ? isGothic
+                                  ? 'bg-[#E8DCC4] text-[#050508] border-[#E8DCC4]'
+                                  : isWhite
+                                  ? 'bg-[#191C1E] text-white border-[#191C1E]'
+                                  : 'bg-[#FF5357] text-[#131317] border-[#FF5357]'
+                                : isGothic
+                                ? 'bg-[#050508] text-[#888890] border-[#E8DCC4]/20'
+                                : isWhite
+                                ? 'bg-[#F8F9FB] text-[#76777B] border-[#D8DADC]'
+                                : 'bg-[#131317] text-[#8E8E93] border-[#343438]'
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-[15px]">{t.icon}</span>
+                            <span>{t.label}</span>
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* 标题 */}
                       <input
                         type="text"
                         value={newVaultTitle}
                         onChange={(e) => setNewVaultTitle(e.target.value)}
-                        placeholder="CIPHER CODENAME (e.g. SACRED_MATRIX_09)..."
-                        className="w-full bg-[#050508] border border-[#E8DCC4]/20 text-[#F5F5FA] p-2 text-xs font-mono-code focus:outline-none focus:border-[#E8DCC4] placeholder-[#888890]/60"
+                        placeholder={
+                          newVaultType === 'link' ? "BOOKMARK TITLE (e.g. ARS ELECTRONICA ARCHIVE)..." :
+                          newVaultType === 'quote' ? "TOPIC / CONTEXT (e.g. DISCIPLINE & RESOLVE)..." :
+                          newVaultType === 'snippet' ? "SNIPPET TITLE (e.g. CSS GLITCH SHADER)..." :
+                          "MEDIA CAPTION / TITLE..."
+                        }
+                        className={`w-full p-2 text-xs font-mono-code focus:outline-none border ${
+                          isGothic
+                            ? 'bg-[#050508] border-[#E8DCC4]/20 text-[#F5F5FA] focus:border-[#E8DCC4] placeholder-[#888890]/60'
+                            : isWhite
+                            ? 'bg-[#F8F9FB] border-[#D8DADC] text-[#191C1E] focus:border-[#191C1E] placeholder-[#76777B]'
+                            : 'bg-[#131317] border-[#5F3E3D] text-[#E4E1E7] focus:border-[#FFB3AF] placeholder-[#5F3E3D]'
+                        }`}
                       />
+
+                      {/* 内容 (URL / Quote / Code) */}
                       <textarea
                         value={newVaultContent}
                         onChange={(e) => setNewVaultContent(e.target.value)}
-                        placeholder="CONFIDENTIAL DOCTRINE TO ENCRYPT & ENCLAVE..."
-                        rows={3}
-                        className="w-full bg-[#050508] border border-[#E8DCC4]/20 text-[#F5F5FA] font-chivo p-2 text-xs focus:outline-none focus:border-[#E8DCC4] resize-none placeholder-[#888890]/60"
+                        placeholder={
+                          newVaultType === 'link' ? "https://example.com/useful-article..." :
+                          newVaultType === 'quote' ? "PASTE MEMORABLE QUOTE OR PASSAGE HERE..." :
+                          newVaultType === 'snippet' ? "PASTE CODE OR COMMAND LINE SNIPPET..." :
+                          "DESCRIPTION OR NOTE FOR THIS IMAGE..."
+                        }
+                        rows={newVaultType === 'snippet' ? 4 : 3}
+                        className={`w-full p-2 text-xs focus:outline-none resize-none border ${
+                          newVaultType === 'snippet' ? 'font-mono-code' : isGothic ? 'font-chivo' : 'font-space'
+                        } ${
+                          isGothic
+                            ? 'bg-[#050508] border-[#E8DCC4]/20 text-[#F5F5FA] focus:border-[#E8DCC4] placeholder-[#888890]/60'
+                            : isWhite
+                            ? 'bg-[#F8F9FB] border-[#D8DADC] text-[#191C1E] focus:border-[#191C1E] placeholder-[#76777B]'
+                            : 'bg-[#131317] border-[#5F3E3D] text-[#E4E1E7] focus:border-[#FFB3AF] placeholder-[#5F3E3D]'
+                        }`}
                       />
-                      <input
-                        type="text"
-                        value={newVaultTags}
-                        onChange={(e) => setNewVaultTags(e.target.value)}
-                        placeholder="TAGS (e.g. LEVEL_5, CONDEMNED)..."
-                        className="w-full bg-[#050508] border border-[#E8DCC4]/20 text-[#F5F5FA] px-2 py-1.5 text-xs font-mono-code focus:outline-none focus:border-[#E8DCC4] placeholder-[#888890]/60"
-                      />
-                      <div className="flex justify-between items-center pt-1 border-t border-[#E8DCC4]/15">
-                        <label className="flex items-center gap-1.5 cursor-pointer font-mono-code text-[11px] text-[#E8DCC4] select-none">
+
+                      {/* 来源 / 作者 / 语言 */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="text"
+                          value={newVaultSource}
+                          onChange={(e) => setNewVaultSource(e.target.value)}
+                          placeholder={
+                            newVaultType === 'link' ? "DOMAIN (OPTIONAL)" :
+                            newVaultType === 'quote' ? "AUTHOR / SPEAKER..." :
+                            newVaultType === 'snippet' ? "LANG (e.g. Rust, TS)..." :
+                            "SOURCE..."
+                          }
+                          className={`w-full p-1.5 text-xs font-mono-code focus:outline-none border ${
+                            isGothic
+                              ? 'bg-[#050508] border-[#E8DCC4]/20 text-[#F5F5FA] focus:border-[#E8DCC4] placeholder-[#888890]/60'
+                              : isWhite
+                              ? 'bg-[#F8F9FB] border-[#D8DADC] text-[#191C1E] focus:border-[#191C1E] placeholder-[#76777B]'
+                              : 'bg-[#131317] border-[#5F3E3D] text-[#E4E1E7] focus:border-[#FFB3AF] placeholder-[#5F3E3D]'
+                          }`}
+                        />
+
+                        <input
+                          type="text"
+                          value={newVaultTags}
+                          onChange={(e) => setNewVaultTags(e.target.value)}
+                          placeholder="TAGS (e.g. DESIGN, DEV)..."
+                          className={`w-full p-1.5 text-xs font-mono-code focus:outline-none border ${
+                            isGothic
+                              ? 'bg-[#050508] border-[#E8DCC4]/20 text-[#F5F5FA] focus:border-[#E8DCC4] placeholder-[#888890]/60'
+                              : isWhite
+                              ? 'bg-[#F8F9FB] border-[#D8DADC] text-[#191C1E] focus:border-[#191C1E] placeholder-[#76777B]'
+                              : 'bg-[#131317] border-[#5F3E3D] text-[#E4E1E7] focus:border-[#FFB3AF] placeholder-[#5F3E3D]'
+                          }`}
+                        />
+                      </div>
+
+                      {/* 图片上传附件 (可选) */}
+                      {newVaultType === 'media' && (
+                        <div className="flex items-center gap-2">
                           <input
-                            type="checkbox"
-                            checked={newVaultEncrypt}
-                            onChange={(e) => setNewVaultEncrypt(e.target.checked)}
-                            className="accent-[#FF2442] w-3.5 h-3.5 cursor-pointer"
+                            type="file"
+                            accept="image/*"
+                            ref={vaultFileInputRef}
+                            onChange={handleVaultImageUpload}
+                            className="hidden"
                           />
-                          <span>ENCRYPT WITH HEX CIPHER</span>
-                        </label>
+                          <button
+                            type="button"
+                            onClick={() => vaultFileInputRef.current?.click()}
+                            className={`px-3 py-1.5 font-mono-code text-[10px] font-bold uppercase transition-colors border flex items-center gap-1 cursor-pointer ${
+                              isGothic
+                                ? 'border-[#E8DCC4]/40 bg-[#050508] text-[#E8DCC4]'
+                                : isWhite
+                                ? 'border-[#191C1E] bg-[#191C1E] text-white'
+                                : 'border-[#FFB3AF] bg-[#FFB3AF] text-[#131317]'
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-[14px]">add_photo_alternate</span>
+                            <span>{newVaultImage ? 'IMAGE ATTACHED ✓' : 'CHOOSE IMAGE'}</span>
+                          </button>
+                          {newVaultImage && (
+                            <img
+                              src={newVaultImage}
+                              alt="preview"
+                              className="w-8 h-8 object-cover border border-[#E8DCC4]/40"
+                            />
+                          )}
+                        </div>
+                      )}
+
+                      {/* 提交按钮 */}
+                      <div className="flex justify-end pt-1">
                         <button
                           type="submit"
-                          disabled={!newVaultTitle.trim() || !newVaultContent.trim()}
-                          className="border border-[#E8DCC4] bg-[#E8DCC4] text-[#050508] hover:bg-white disabled:opacity-40 px-3.5 py-1.5 font-bodoni text-xs font-bold uppercase transition-colors cursor-pointer"
+                          disabled={!newVaultTitle.trim() && !newVaultContent.trim()}
+                          className={`px-4 py-1.5 font-bold uppercase text-xs transition-colors cursor-pointer disabled:opacity-40 flex items-center gap-1 ${
+                            isGothic
+                              ? 'border border-[#E8DCC4] bg-[#E8DCC4] text-[#050508] hover:bg-white font-bodoni shadow-[0_0_10px_rgba(232,220,196,0.3)]'
+                              : isWhite
+                              ? 'bg-[#191C1E] text-white hover:bg-[#006875] font-space btn-chamfer shadow-[2px_2px_0px_0px_#76777B]'
+                              : 'border-2 border-[#FFB3AF] bg-[#FF5357] text-[#131317] hover:bg-[#FFB3AF] font-anton tracking-wider shadow-[3px_3px_0px_0px_#131317]'
+                          }`}
                         >
-                          LOCK & CONCEAL
+                          <span className="material-symbols-outlined text-[14px]">save</span>
+                          <span>STASH TO VAULT</span>
                         </button>
                       </div>
                     </form>
                   )}
                 </div>
 
-                {/* 归档机密卡片列表 */}
+                {/* 4. 剪藏卡片流 (按类型展示多样化卡片) */}
                 <div className="space-y-3">
-                  {vaultItems.map((item) => (
-                    <div key={item.id} className="relative overflow-hidden group">
-                      <div className="absolute inset-y-0 right-0 w-20 bg-[#960018] flex items-center justify-center text-white z-0">
-                        <button
-                          type="button"
-                          onClick={(e) => handleDeleteVaultItem(item.id, e)}
-                          className="w-full h-full flex flex-col items-center justify-center font-mono-code text-[10px] font-bold uppercase hover:bg-black/30 transition-colors cursor-pointer"
-                        >
-                          <span className="material-symbols-outlined text-[20px]">delete_forever</span>
-                          <span>PURGE</span>
-                        </button>
-                      </div>
-
-                      <motion.article
-                        drag="x"
-                        dragConstraints={{ left: -75, right: 0 }}
-                        dragElastic={0.05}
-                        animate={{ x: swipedVaultId === item.id ? -75 : 0 }}
-                        transition={{ type: 'spring', damping: 28, stiffness: 450 }}
-                        onDragEnd={(_, info) => {
-                          if (info.offset.x < -25 || info.velocity.x < -150) {
-                            setSwipedVaultId(item.id);
-                          } else if (info.offset.x > 15 || info.velocity.x > 150) {
-                            setSwipedVaultId(null);
-                          }
-                        }}
-                        onClick={() => {
-                          if (swipedVaultId === item.id) setSwipedVaultId(null);
-                        }}
-                        className={`relative z-10 p-3.5 select-none cursor-grab active:cursor-grabbing border ${
-                          item.encrypted
-                            ? 'border-[#E8DCC4]/30 bg-[#08080C] shadow-[0_0_10px_rgba(0,0,0,0.5)]'
-                            : 'border-[#E8DCC4] bg-[#0A0A0F] shadow-[0_0_12px_rgba(232,220,196,0.15)]'
-                        }`}
-                      >
-                        <div className="flex justify-between items-center pb-1 mb-2 border-b border-[#E8DCC4]/15">
-                          <span className="font-mono-code text-[10px] text-[#E8DCC4]">
-                            LOG_ID: {item.logId}
-                          </span>
-                          <span
-                            className={`font-mono-code text-[9px] px-1.5 py-0.5 font-bold uppercase ${
-                              item.encrypted ? 'border border-[#FF2442] text-[#FF2442] bg-[#120508]' : 'bg-[#E8DCC4] text-[#050508]'
-                            }`}
-                          >
-                            {item.encrypted ? 'SEALED // ENCRYPTED' : 'UNLOCKED'}
-                          </span>
-                        </div>
-
-                        <h3 className="font-bodoni text-base font-bold text-[#F5F5FA] uppercase mb-1">
-                          {item.title}
-                        </h3>
-                        <p
-                          className={`text-xs leading-relaxed mb-3 ${
-                            item.encrypted ? 'font-mono-code break-all text-[#888890]' : 'font-chivo text-[#C8C8D0]'
-                          }`}
-                        >
-                          {item.content}
-                        </p>
-
-                        {item.encrypted ? (
+                  {filteredVaultItems.length === 0 ? (
+                    <div className={`p-8 text-center border-2 border-dashed font-mono-code text-xs ${
+                      isGothic ? 'border-[#E8DCC4]/20 text-[#888890]' : isWhite ? 'border-[#D8DADC] text-[#76777B]' : 'border-[#5F3E3D] text-[#8E8E93]'
+                    }`}>
+                      NO CLIPS FOUND IN THIS CATEGORY.
+                    </div>
+                  ) : (
+                    filteredVaultItems.map((item) => (
+                      <div key={item.id} className="relative overflow-hidden group">
+                        {/* 左滑删除 */}
+                        <div className={`absolute inset-y-0 right-0 w-20 flex items-center justify-center text-white z-0 ${
+                          isGothic ? 'bg-[#960018]' : isWhite ? 'bg-[#BA1A1A]' : 'bg-[#FF5357]'
+                        }`}>
                           <button
                             type="button"
-                            onClick={() => handleDecryptVault(item.id)}
-                            className="w-full border border-[#E8DCC4] bg-[#050508] hover:bg-[#E8DCC4] hover:text-[#050508] text-[#E8DCC4] font-bodoni text-xs py-1.5 uppercase transition-all cursor-pointer shadow-[0_0_8px_rgba(232,220,196,0.15)]"
+                            onClick={(e) => handleDeleteVaultItem(item.id, e)}
+                            className="w-full h-full flex flex-col items-center justify-center font-mono-code text-[10px] font-bold uppercase hover:bg-black/30 transition-colors cursor-pointer"
                           >
-                            [ DISSOLVE SEAL // EXTRACT CIPHER ]
+                            <span className="material-symbols-outlined text-[20px]">delete_forever</span>
+                            <span>PURGE</span>
                           </button>
-                        ) : (
-                          <div className="flex gap-1.5">
+                        </div>
+
+                        <motion.article
+                          drag="x"
+                          dragConstraints={{ left: -75, right: 0 }}
+                          dragElastic={0.05}
+                          animate={{ x: swipedVaultId === item.id ? -75 : 0 }}
+                          transition={{ type: 'spring', damping: 28, stiffness: 450 }}
+                          onDragEnd={(_, info) => {
+                            if (info.offset.x < -25 || info.velocity.x < -150) {
+                              setSwipedVaultId(item.id);
+                            } else if (info.offset.x > 15 || info.velocity.x > 150) {
+                              setSwipedVaultId(null);
+                            }
+                          }}
+                          onClick={() => {
+                            if (swipedVaultId === item.id) setSwipedVaultId(null);
+                          }}
+                          className={`relative z-10 p-3.5 select-none cursor-grab active:cursor-grabbing border ${
+                            isGothic
+                              ? 'border-[#E8DCC4]/40 bg-[#0A0A0F] shadow-[0_0_12px_rgba(232,220,196,0.1)]'
+                              : isWhite
+                              ? 'border-2 border-[#191C1E] bg-white shadow-[4px_4px_0px_0px_#191C1E] crop-marks'
+                              : 'border-2 border-[#FFB3AF] bg-[#131317] shadow-[5px_5px_0px_0px_#FFB3AF]'
+                          }`}
+                        >
+                          {/* 卡片头部：类型 Icon + 标题 + 时间 */}
+                          <div className={`flex justify-between items-center pb-1.5 mb-2 border-b ${
+                            isGothic ? 'border-[#E8DCC4]/15' : isWhite ? 'border-[#ECEEF0]' : 'border-dotted border-[#5F3E3D]'
+                          }`}>
+                            <div className="flex items-center gap-1.5">
+                              <span className={`font-mono-code text-[9px] px-1.5 py-0.5 font-bold uppercase flex items-center gap-1 ${
+                                item.type === 'link'
+                                  ? 'bg-[#006875] text-white'
+                                  : item.type === 'quote'
+                                  ? isGothic ? 'bg-[#D4AF37] text-[#050508]' : isWhite ? 'bg-[#BA1A1A] text-white' : 'bg-[#FF5357] text-[#131317]'
+                                  : item.type === 'snippet'
+                                  ? 'bg-[#191C1E] text-[#00FF66] border border-[#00FF66]/40'
+                                  : 'bg-[#5C000B] text-white'
+                              }`}>
+                                <span className="material-symbols-outlined text-[11px]">
+                                  {item.type === 'link' ? 'link' : item.type === 'quote' ? 'format_quote' : item.type === 'snippet' ? 'terminal' : 'image'}
+                                </span>
+                                {item.type}
+                              </span>
+
+                              {item.sourceOrAuthor && (
+                                <span className={`font-mono-code text-[10px] ${
+                                  isGothic ? 'text-[#D4AF37]' : isWhite ? 'text-[#006875]' : 'text-[#FFB3AF]'
+                                }`}>
+                                  {item.type === 'link' ? item.sourceOrAuthor : item.type === 'quote' ? `— ${item.sourceOrAuthor}` : `[${item.sourceOrAuthor}]`}
+                                </span>
+                              )}
+                            </div>
+
+                            <span className={`font-mono-code text-[9px] ${
+                              isGothic ? 'text-[#888890]' : isWhite ? 'text-[#76777B]' : 'text-[#8E8E93]'
+                            }`}>
+                              {item.time}
+                            </span>
+                          </div>
+
+                          {/* 标题 */}
+                          <h3 className={`text-base font-bold uppercase mb-1.5 ${
+                            isGothic ? 'font-bodoni text-[#F5F5FA]' : isWhite ? 'font-space text-[#191C1E]' : 'font-anton text-[#FFB3AF] tracking-wide'
+                          }`}>
+                            {item.title}
+                          </h3>
+
+                          {/* 核心内容渲染：针对不同类型做特殊设计 */}
+                          {item.type === 'link' ? (
+                            /* 🔗 外链类型：高亮 URL 与一键跳转按钮 */
+                            <div className={`p-2.5 my-2 border flex justify-between items-center gap-2 ${
+                              isGothic
+                                ? 'bg-[#050508] border-[#E8DCC4]/20'
+                                : isWhite
+                                ? 'bg-[#F8F9FB] border-[#D8DADC]'
+                                : 'bg-[#1F1F23] border-[#343438]'
+                            }`}>
+                              <span className="font-mono-code text-xs truncate select-all text-[#64B5F6]">
+                                {item.content}
+                              </span>
+                              <a
+                                href={item.content.startsWith('http') ? item.content : `https://${item.content}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  playClickSound();
+                                }}
+                                className={`px-2 py-1 font-mono-code text-[10px] font-bold uppercase shrink-0 transition-all flex items-center gap-1 border ${
+                                  isGothic
+                                    ? 'bg-[#E8DCC4] text-[#050508] border-[#E8DCC4] hover:bg-white'
+                                    : isWhite
+                                    ? 'bg-[#191C1E] text-white border-[#191C1E] hover:bg-[#006875]'
+                                    : 'bg-[#FF5357] text-[#131317] border-[#FF5357] hover:bg-[#FFB3AF]'
+                                }`}
+                              >
+                                <span>OPEN</span>
+                                <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+                              </a>
+                            </div>
+                          ) : item.type === 'quote' ? (
+                            /* 💬 名言/金句类型：大气排版引号 */
+                            <blockquote className={`my-2 p-2.5 border-l-4 italic leading-relaxed text-xs sm:text-sm ${
+                              isGothic
+                                ? 'border-[#D4AF37] bg-[#050508] text-[#E8DCC4] font-bodoni'
+                                : isWhite
+                                ? 'border-[#191C1E] bg-[#F8F9FB] text-[#191C1E] font-space'
+                                : 'border-[#FF5357] bg-[#1F1F23] text-[#E4E1E7] font-chivo'
+                            }`}>
+                              “{item.content}”
+                            </blockquote>
+                          ) : item.type === 'snippet' ? (
+                            /* ⚡ 代码/命令类型：暗黑终端风格代码框 */
+                            <div className="my-2 relative group/snippet">
+                              <pre className="p-2.5 bg-[#050508] border border-[#343438] font-mono-code text-[11px] text-[#00FF66] overflow-x-auto select-all leading-snug">
+                                <code>{item.content}</code>
+                              </pre>
+                              <button
+                                type="button"
+                                onClick={(e) => handleCopySnippet(item.id, item.content, e)}
+                                className="absolute top-1.5 right-1.5 px-1.5 py-0.5 font-mono-code text-[8px] font-bold uppercase bg-[#191C1E] text-white border border-[#343438] hover:border-[#00FF66] hover:text-[#00FF66] transition-colors cursor-pointer"
+                              >
+                                {copiedSnippetId === item.id ? 'COPIED ✓' : 'COPY'}
+                              </button>
+                            </div>
+                          ) : (
+                            /* 🖼️ 图片/备忘类型 */
+                            <div className="my-2 space-y-1.5">
+                              {item.imageUrl && (
+                                <img
+                                  src={item.imageUrl}
+                                  alt={item.title}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedPreviewImage(item.imageUrl || null);
+                                  }}
+                                  className="w-full max-h-48 object-cover border border-[#E8DCC4]/30 cursor-pointer"
+                                />
+                              )}
+                              {item.content && (
+                                <p className={`text-xs leading-relaxed ${
+                                  isGothic ? 'font-chivo text-[#888890]' : isWhite ? 'text-[#46464B]' : 'text-[#E4E1E7]'
+                                }`}>
+                                  {item.content}
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {/* 底部标签列表 */}
+                          <div className="flex flex-wrap gap-1 mt-2">
                             {item.tags.map((tag, idx) => (
                               <span
                                 key={idx}
-                                className="px-1.5 py-0.5 font-mono-code text-[9px] border border-[#E8DCC4]/30 bg-[#050508] text-[#E8DCC4]"
+                                className={`px-1.5 py-0.5 font-mono-code text-[9px] border ${
+                                  isGothic
+                                    ? 'border-[#E8DCC4]/20 bg-[#050508] text-[#E8DCC4]'
+                                    : isWhite
+                                    ? 'border-[#D8DADC] bg-[#F8F9FB] text-[#76777B]'
+                                    : 'border-[#5F3E3D] bg-[#18181D] text-[#E9BCB9]'
+                                }`}
                               >
                                 #{tag}
                               </span>
                             ))}
                           </div>
-                        )}
-                      </motion.article>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : isWhite ? (
-              /* ⚪ PRTS_WHITE 专属：罗德岛绝密黑匣子中央监视台 */
-              <div className="space-y-4">
-                <div className="flex justify-between items-end border-b-2 border-[#191C1E] pb-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="bg-[#191C1E] text-white font-mono-code text-[9px] px-1.5 py-0.5 font-bold">[PRTS-004]</span>
-                      <h2 className="font-space text-lg font-bold text-[#191C1E] uppercase tracking-wide">
-                        RHODES_SECURITY // THE_VAULT
-                      </h2>
-                    </div>
-                    <p className="font-mono-code text-[9px] text-[#76777B] mt-0.5">
-                      BLACK_BOX_ARCHIVE // LEVEL_5_RESTRICTED
-                    </p>
-                  </div>
-                  <div className="font-mono-code text-[9px] bg-[#BA1A1A] text-white px-2 py-0.5 font-bold flex items-center gap-1 uppercase">
-                    <span className="material-symbols-outlined text-[12px]">lock</span>
-                    RESTRICTED
-                  </div>
-                </div>
-
-                {/* 罗德岛全息监控部件 */}
-                <div className="p-3 border-2 border-[#191C1E] bg-white shadow-[4px_4px_0px_0px_#191C1E] crop-marks">
-                  <div className="flex justify-between items-center border-b border-[#ECEEF0] pb-1 mb-2 font-mono-code text-[10px] text-[#191C1E] font-bold">
-                    <span>SECURITY_CORE_STATUS</span>
-                    <span className="text-[#BA1A1A] animate-pulse">FIREWALL_BREACHED</span>
-                  </div>
-                  <div className="font-mono-code text-[10px] space-y-1 text-[#46464B]">
-                    <div className="flex justify-between">
-                      <span>MAIN_GRID</span> <span className="text-[#191C1E] font-bold">OFFLINE</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>CORE_TEMP</span> <span className="text-[#BA1A1A] font-bold">CRITICAL // 94°C</span>
-                    </div>
-                  </div>
-                  <div className="mt-2.5 flex gap-1 h-2">
-                    <div className="bg-[#191C1E] flex-1"></div>
-                    <div className="bg-[#191C1E] flex-1"></div>
-                    <div className="bg-[#006875] flex-1"></div>
-                    <div className="bg-[#D8DADC] flex-1"></div>
-                  </div>
-                </div>
-
-                {/* 存入新机密表单 */}
-                <div className="p-3 space-y-2.5 bg-white border-2 border-[#191C1E] shadow-[4px_4px_0px_0px_#191C1E]">
-                  <div className="flex justify-between items-center">
-                    <span className="font-mono-code text-[10px] font-bold text-[#191C1E]">
-                      // ENCRYPT_INTO_BLACK_BOX
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setShowVaultForm(!showVaultForm)}
-                      className="font-mono-code text-[10px] px-2 py-0.5 transition-colors cursor-pointer border border-[#D8DADC] bg-[#F8F9FB] text-[#191C1E] hover:border-[#191C1E]"
-                    >
-                      {showVaultForm ? '[-] HIDE_PANEL ▲' : '[+] NEW_SECRET ▾'}
-                    </button>
-                  </div>
-
-                  {showVaultForm && (
-                    <form onSubmit={handleAddVaultItem} className="space-y-2.5 pt-1 border-t border-[#D8DADC]">
-                      <input
-                        type="text"
-                        value={newVaultTitle}
-                        onChange={(e) => setNewVaultTitle(e.target.value)}
-                        placeholder="SECRET CODENAME (e.g. OPERATION_DARKSTAR)..."
-                        className="w-full bg-[#F8F9FB] border border-[#D8DADC] text-[#191C1E] p-2 text-xs font-mono-code focus:outline-none focus:border-[#191C1E] placeholder-[#76777B]"
-                      />
-                      <textarea
-                        value={newVaultContent}
-                        onChange={(e) => setNewVaultContent(e.target.value)}
-                        placeholder="CONFIDENTIAL CONTENT TO LOCK & CIPHER..."
-                        rows={3}
-                        className="w-full bg-[#F8F9FB] border border-[#D8DADC] text-[#191C1E] font-space p-2 text-xs focus:outline-none resize-none placeholder-[#76777B]"
-                      />
-                      <input
-                        type="text"
-                        value={newVaultTags}
-                        onChange={(e) => setNewVaultTags(e.target.value)}
-                        placeholder="TAGS (e.g. TOP_SECRET, LEVEL_5)..."
-                        className="w-full bg-[#F8F9FB] border border-[#D8DADC] text-[#191C1E] px-2 py-1.5 text-xs font-mono-code focus:outline-none focus:border-[#191C1E] placeholder-[#76777B]"
-                      />
-                      <div className="flex justify-between items-center pt-1 border-t border-[#D8DADC]">
-                        <label className="flex items-center gap-1.5 cursor-pointer font-mono-code text-[11px] text-[#191C1E] select-none">
-                          <input
-                            type="checkbox"
-                            checked={newVaultEncrypt}
-                            onChange={(e) => setNewVaultEncrypt(e.target.checked)}
-                            className="accent-[#BA1A1A] w-3.5 h-3.5 cursor-pointer"
-                          />
-                          <span>ENCRYPT WITH HEX CIPHER</span>
-                        </label>
-                        <button
-                          type="submit"
-                          disabled={!newVaultTitle.trim() || !newVaultContent.trim()}
-                          className="bg-[#191C1E] text-white hover:bg-[#006875] disabled:opacity-40 px-3.5 py-1.5 font-mono-code text-xs font-bold uppercase transition-colors cursor-pointer shadow-[2px_2px_0px_0px_#76777B] flex items-center gap-1 btn-chamfer"
-                        >
-                          <span className="material-symbols-outlined text-[14px]">lock</span>
-                          <span>LOCK & SAVE</span>
-                        </button>
+                        </motion.article>
                       </div>
-                    </form>
+                    ))
                   )}
                 </div>
-
-                {/* 归档机密列表 */}
-                <div className="space-y-3">
-                  {vaultItems.map((item) => (
-                    <div key={item.id} className="relative overflow-hidden group">
-                      <div className="absolute inset-y-0 right-0 w-20 bg-[#BA1A1A] flex items-center justify-center text-white z-0">
-                        <button
-                          type="button"
-                          onClick={(e) => handleDeleteVaultItem(item.id, e)}
-                          className="w-full h-full flex flex-col items-center justify-center font-mono-code text-[10px] font-bold uppercase hover:bg-black/20 transition-colors cursor-pointer"
-                        >
-                          <span className="material-symbols-outlined text-[20px]">delete_forever</span>
-                          <span>PURGE</span>
-                        </button>
-                      </div>
-
-                      <motion.article
-                        drag="x"
-                        dragConstraints={{ left: -75, right: 0 }}
-                        dragElastic={0.05}
-                        animate={{ x: swipedVaultId === item.id ? -75 : 0 }}
-                        transition={{ type: 'spring', damping: 28, stiffness: 450 }}
-                        onDragEnd={(_, info) => {
-                          if (info.offset.x < -25 || info.velocity.x < -150) {
-                            setSwipedVaultId(item.id);
-                          } else if (info.offset.x > 15 || info.velocity.x > 150) {
-                            setSwipedVaultId(null);
-                          }
-                        }}
-                        onClick={() => {
-                          if (swipedVaultId === item.id) setSwipedVaultId(null);
-                        }}
-                        className={`relative z-10 p-3.5 select-none cursor-grab active:cursor-grabbing border-2 ${
-                          item.encrypted
-                            ? 'border-[#191C1E] bg-[#F8F9FB] shadow-[4px_4px_0px_0px_#191C1E]'
-                            : 'border-[#191C1E] bg-white shadow-[4px_4px_0px_0px_#006875]'
-                        }`}
-                      >
-                        <div className="flex justify-between items-center pb-1 mb-2 border-b border-[#ECEEF0]">
-                          <span className="font-mono-code text-[10px] text-[#191C1E] font-bold">
-                            LOG_ID: {item.logId}
-                          </span>
-                          <span
-                            className={`font-mono-code text-[9px] px-1.5 py-0.5 font-bold uppercase ${
-                              item.encrypted ? 'border border-[#BA1A1A] text-[#BA1A1A]' : 'bg-[#191C1E] text-white'
-                            }`}
-                          >
-                            {item.encrypted ? 'ENCRYPTED' : 'DECRYPTED'}
-                          </span>
-                        </div>
-
-                        <h3 className="font-space text-base font-bold text-[#191C1E] uppercase mb-1">
-                          {item.title}
-                        </h3>
-                        <p
-                          className={`text-xs leading-relaxed mb-3 ${
-                            item.encrypted ? 'font-mono-code break-all text-[#76777B]' : 'font-space text-[#46464B]'
-                          }`}
-                        >
-                          {item.content}
-                        </p>
-
-                        {item.encrypted ? (
-                          <button
-                            type="button"
-                            onClick={() => handleDecryptVault(item.id)}
-                            className="w-full bg-[#191C1E] text-white hover:bg-[#006875] font-mono-code text-xs py-1.5 uppercase transition-all cursor-pointer shadow-[2px_2px_0px_0px_#76777B] btn-chamfer"
-                          >
-                            [ ATTEMPT DECRYPTION ]
-                          </button>
-                        ) : (
-                          <div className="flex gap-1.5">
-                            {item.tags.map((tag, idx) => (
-                              <span
-                                key={idx}
-                                className="px-1.5 py-0.5 font-mono-code text-[9px] border border-[#D8DADC] bg-[#F8F9FB] text-[#191C1E]"
-                              >
-                                #{tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </motion.article>
-                    </div>
-                  ))}
-                </div>
               </div>
-            ) : (
-              /* 🌑 SYS_REBEL 专属：暗黑粗野黑客乱码视窗 */
-              <div className="space-y-4">
-                <div className="flex justify-between items-end border-b-2 border-dashed border-[#FFB3AF] pb-2">
-                  <div>
-                    <h2 className="font-anton text-2xl uppercase text-[#FFB3AF]">THE VAULT</h2>
-                    <p className="font-mono-code text-[10px] text-[#C8C5C8]">
-                      SECURE ARCHIVE v2.4 // ENCRYPTED FRAGMENTS
-                    </p>
-                  </div>
-                  <div className="font-mono-code text-[9px] bg-[#FF5357] text-[#5C000B] px-2 py-0.5 font-bold flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[12px]">lock</span>
-                    RESTRICTED
-                  </div>
-                </div>
-
-                {/* 系统监控小部件 */}
-                <div className="border-2 border-[#909191] bg-[#1F1F23] p-3 shadow-[4px_4px_0px_0px_#909191]">
-                  <div className="flex justify-between items-center border-b border-dashed border-[#909191] pb-1 mb-2 font-mono-code text-[10px] text-[#C6C6C7]">
-                    <span>SYSTEM_STATUS</span>
-                    <span className="text-[#FF5357]">FIREWALL_BREACHED</span>
-                  </div>
-                  <div className="font-mono-code text-[10px] space-y-1 text-[#E9BCB9]">
-                    <div className="flex justify-between">
-                      <span>MAIN_GRID</span> <span className="text-[#FFB3AF]">OFFLINE</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>CORE_TEMP</span> <span className="text-[#FF5357] animate-pulse">CRITICAL</span>
-                    </div>
-                  </div>
-                  <div className="mt-2 flex gap-1 h-2">
-                    <div className="bg-[#FF5357] flex-1"></div>
-                    <div className="bg-[#FF5357] flex-1"></div>
-                    <div className="bg-[#FF5357] flex-1"></div>
-                    <div className="bg-[#343438] flex-1"></div>
-                  </div>
-                </div>
-
-                {/* 存入新机密表单 */}
-                <div className="bg-[#1F1F23] border-2 border-[#FFB3AF] p-3 space-y-2.5 shadow-[4px_4px_0px_0px_#FFB3AF]">
-                  <div className="flex justify-between items-center">
-                    <span className="font-mono-code text-[10px] text-[#FFB3AF] font-bold">
-                      // ENCRYPT_INTO_VAULT
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setShowVaultForm(!showVaultForm)}
-                      className="font-mono-code text-[10px] text-[#E9BCB9] hover:text-[#FFB3AF] border border-[#5F3E3D] hover:border-[#FFB3AF] px-1.5 py-0.5 transition-colors cursor-pointer"
-                    >
-                      {showVaultForm ? '[-] HIDE_PANEL ▲' : '[+] NEW_SECRET ▾'}
-                    </button>
-                  </div>
-
-                  {showVaultForm && (
-                    <form onSubmit={handleAddVaultItem} className="space-y-2.5 pt-1 border-t border-dashed border-[#5F3E3D]">
-                      <input
-                        type="text"
-                        value={newVaultTitle}
-                        onChange={(e) => setNewVaultTitle(e.target.value)}
-                        placeholder="SECRET CODENAME (e.g. OPERATION_DARKSTAR)..."
-                        className="w-full bg-[#131317] border border-[#5F3E3D] text-[#E4E1E7] p-2 text-xs font-mono-code focus:outline-none focus:border-[#FFB3AF] placeholder-[#5F3E3D]"
-                      />
-                      <textarea
-                        value={newVaultContent}
-                        onChange={(e) => setNewVaultContent(e.target.value)}
-                        placeholder="CONFIDENTIAL CONTENT TO LOCK & CIPHER..."
-                        rows={3}
-                        className="w-full bg-[#131317] border border-[#5F3E3D] text-[#E4E1E7] p-2 text-xs font-chivo focus:outline-none focus:border-[#FFB3AF] resize-none placeholder-[#5F3E3D]"
-                      />
-                      <input
-                        type="text"
-                        value={newVaultTags}
-                        onChange={(e) => setNewVaultTags(e.target.value)}
-                        placeholder="TAGS (e.g. TOP_SECRET, LEVEL_5)..."
-                        className="w-full bg-[#131317] border border-[#5F3E3D] text-[#E4E1E7] px-2 py-1.5 text-xs font-mono-code focus:outline-none focus:border-[#FFB3AF] placeholder-[#5F3E3D]"
-                      />
-                      <div className="flex justify-between items-center pt-1">
-                        <label className="flex items-center gap-1.5 cursor-pointer font-mono-code text-[11px] text-[#E9BCB9] select-none hover:text-[#FFB3AF]">
-                          <input
-                            type="checkbox"
-                            checked={newVaultEncrypt}
-                            onChange={(e) => setNewVaultEncrypt(e.target.checked)}
-                            className="accent-[#FF5357] w-3.5 h-3.5 cursor-pointer"
-                          />
-                          <span>ENCRYPT WITH HEX CIPHER</span>
-                        </label>
-                        <button
-                          type="submit"
-                          disabled={!newVaultTitle.trim() || !newVaultContent.trim()}
-                          className="flex items-center gap-1 border-2 border-[#FFB3AF] bg-[#FFB3AF] text-[#68000E] px-3.5 py-1.5 font-mono-code text-xs font-bold uppercase hover:bg-[#FF5357] hover:text-white disabled:opacity-40 transition-colors shadow-[2px_2px_0px_0px_#131317]"
-                        >
-                          <span className="material-symbols-outlined text-[14px]">lock</span>
-                          <span>LOCK & SAVE</span>
-                        </button>
-                      </div>
-                    </form>
-                  )}
-                </div>
-
-                {/* 归档机密列表 */}
-                <div className="space-y-3">
-                  {vaultItems.map((item) => (
-                    <div key={item.id} className="relative overflow-hidden group">
-                      <div className="absolute inset-y-0 right-0 w-20 bg-[#FF5357] flex items-center justify-center text-white z-0">
-                        <button
-                          type="button"
-                          onClick={(e) => handleDeleteVaultItem(item.id, e)}
-                          className="w-full h-full flex flex-col items-center justify-center font-mono-code text-[10px] font-bold uppercase hover:bg-[#68000E] transition-colors"
-                        >
-                          <span className="material-symbols-outlined text-[20px]">delete_forever</span>
-                          <span>PURGE</span>
-                        </button>
-                      </div>
-
-                      <motion.article
-                        drag="x"
-                        dragConstraints={{ left: -75, right: 0 }}
-                        dragElastic={0.05}
-                        animate={{ x: swipedVaultId === item.id ? -75 : 0 }}
-                        transition={{ type: 'spring', damping: 28, stiffness: 450 }}
-                        onDragEnd={(_, info) => {
-                          if (info.offset.x < -25 || info.velocity.x < -150) {
-                            setSwipedVaultId(item.id);
-                          } else if (info.offset.x > 15 || info.velocity.x > 150) {
-                            setSwipedVaultId(null);
-                          }
-                        }}
-                        onClick={() => {
-                          if (swipedVaultId === item.id) setSwipedVaultId(null);
-                        }}
-                        className={`relative z-10 border-2 p-3.5 select-none cursor-grab active:cursor-grabbing ${
-                          item.encrypted
-                            ? 'border-[#B08784] bg-[#1F1F23] shadow-[4px_4px_0px_0px_#B08784]'
-                            : 'border-[#FFB3AF] bg-[#131317] shadow-[5px_5px_0px_0px_#FFB3AF]'
-                        }`}
-                      >
-                        <div className="flex justify-between items-center border-b border-dotted border-[#B08784] pb-1 mb-2">
-                          <span className="font-mono-code text-[10px] text-[#E4E1E7]">
-                            LOG_ID: {item.logId}
-                          </span>
-                          <span
-                            className={`font-mono-code text-[9px] px-1.5 py-0.5 font-bold uppercase ${
-                              item.encrypted ? 'border border-[#FF5357] text-[#FF5357]' : 'bg-[#FFB3AF] text-[#68000E]'
-                            }`}
-                          >
-                            {item.encrypted ? 'ENCRYPTED' : 'DECRYPTED'}
-                          </span>
-                        </div>
-
-                        <h3 className="font-anton text-lg text-[#FFB3AF] uppercase mb-1">
-                          {item.title}
-                        </h3>
-                        <p
-                          className={`font-chivo text-xs text-[#E9BCB9] leading-relaxed mb-3 ${
-                            item.encrypted ? 'font-mono-code break-all opacity-70' : ''
-                          }`}
-                        >
-                          {item.content}
-                        </p>
-
-                        {item.encrypted ? (
-                          <button
-                            type="button"
-                            onClick={() => handleDecryptVault(item.id)}
-                            className="w-full border-2 border-[#FFB3AF] bg-[#131317] text-[#FFB3AF] font-mono-code text-xs py-1.5 uppercase hover:bg-[#FFB3AF] hover:text-[#68000E] transition-all shadow-[2px_2px_0px_0px_#FFB3AF] cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
-                          >
-                            Attempt Decryption
-                          </button>
-                        ) : (
-                          <div className="flex gap-1.5">
-                            {item.tags.map((tag, idx) => (
-                              <span
-                                key={idx}
-                                className="border border-[#B08784] px-1.5 py-0.5 font-mono-code text-[9px] text-[#C8C5C8]"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </motion.article>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )
-          )}
+            );
+          })()}
 
           {/* ===================================================================== */}
           {/* TAB 5: SHIT_DUMP (废弃/脑内垃圾暂存场 - 占位模块) */}

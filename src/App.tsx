@@ -48,7 +48,7 @@ interface SparkItem {
   time?: string;
 }
 
-export type VaultType = 'link' | 'quote' | 'snippet' | 'media';
+export type VaultType = 'link' | 'quote' | 'snippet' | 'media' | 'other';
 
 export interface VaultItem {
   id: string;
@@ -251,6 +251,15 @@ export const App: React.FC = () => {
       sourceOrAuthor: 'kenney.nl',
       tags: ['AUDIO', 'RESOURCES'],
       time: '2026.8.31 14:20',
+    },
+    {
+      id: 'v-5',
+      type: 'other',
+      title: 'RAW MANIFESTO // 0X01',
+      content: 'Reject perfectionism. Ship prototypes fast, test in the wild, iterate brutally with zero regrets.',
+      sourceOrAuthor: 'CORE_DOCTRINE',
+      tags: ['MINDSET', 'TACTICAL'],
+      time: '2026.8.31 12:00',
     },
   ]);
 
@@ -2618,7 +2627,7 @@ export const App: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 2. 类型筛选分类标签 (ALL / LINKS / QUOTES / SNIPPETS / MEDIA) */}
+                {/* 2. 类型筛选分类标签 (ALL / LINKS / QUOTES / SNIPPETS / MEDIA / OTHER) */}
                 <div className="flex gap-1 overflow-x-auto pb-1 no-scrollbar text-xs font-mono-code">
                   {[
                     { id: 'all', label: `ALL (${vaultItems.length})`, icon: 'apps' },
@@ -2626,6 +2635,7 @@ export const App: React.FC = () => {
                     { id: 'quote', label: `QUOTES (${vaultItems.filter(v => v.type === 'quote').length})`, icon: 'format_quote' },
                     { id: 'snippet', label: `CODE (${vaultItems.filter(v => v.type === 'snippet').length})`, icon: 'terminal' },
                     { id: 'media', label: `MEDIA (${vaultItems.filter(v => v.type === 'media').length})`, icon: 'image' },
+                    { id: 'other', label: `OTHER (${vaultItems.filter(v => v.type === 'other').length})`, icon: 'sticky_note_2' },
                   ].map((filter) => (
                     <button
                       key={filter.id}
@@ -2691,12 +2701,13 @@ export const App: React.FC = () => {
                       isGothic ? 'border-[#E8DCC4]/15' : isWhite ? 'border-[#D8DADC]' : 'border-dashed border-[#5F3E3D]'
                     }`}>
                       {/* 类型切换 Tabs */}
-                      <div className="grid grid-cols-4 gap-1">
+                      <div className="grid grid-cols-5 gap-1">
                         {[
                           { id: 'link', label: 'LINK', icon: 'link' },
                           { id: 'quote', label: 'QUOTE', icon: 'format_quote' },
                           { id: 'snippet', label: 'CODE', icon: 'terminal' },
                           { id: 'media', label: 'MEDIA', icon: 'image' },
+                          { id: 'other', label: 'OTHER', icon: 'sticky_note_2' },
                         ].map((t) => (
                           <button
                             key={t.id}
@@ -2734,7 +2745,8 @@ export const App: React.FC = () => {
                           newVaultType === 'link' ? "BOOKMARK TITLE (e.g. ARS ELECTRONICA ARCHIVE)..." :
                           newVaultType === 'quote' ? "TOPIC / CONTEXT (e.g. DISCIPLINE & RESOLVE)..." :
                           newVaultType === 'snippet' ? "SNIPPET TITLE (e.g. CSS GLITCH SHADER)..." :
-                          "MEDIA CAPTION / TITLE..."
+                          newVaultType === 'media' ? "MEDIA CAPTION / TITLE..." :
+                          "NOTE TITLE / TOPIC..."
                         }
                         className={`w-full p-2 text-xs font-mono-code focus:outline-none border ${
                           isGothic
@@ -2745,7 +2757,7 @@ export const App: React.FC = () => {
                         }`}
                       />
 
-                      {/* 内容 (URL / Quote / Code) */}
+                      {/* 内容 (URL / Quote / Code / Notes) */}
                       <textarea
                         value={newVaultContent}
                         onChange={(e) => setNewVaultContent(e.target.value)}
@@ -2753,7 +2765,8 @@ export const App: React.FC = () => {
                           newVaultType === 'link' ? "https://example.com/useful-article..." :
                           newVaultType === 'quote' ? "PASTE MEMORABLE QUOTE OR PASSAGE HERE..." :
                           newVaultType === 'snippet' ? "PASTE CODE OR COMMAND LINE SNIPPET..." :
-                          "DESCRIPTION OR NOTE FOR THIS IMAGE..."
+                          newVaultType === 'media' ? "DESCRIPTION OR NOTE FOR THIS IMAGE..." :
+                          "WRITE FREE-FORM MEMO, DOCTRINE, OR SCRATCHPAD NOTES..."
                         }
                         rows={newVaultType === 'snippet' ? 4 : 3}
                         className={`w-full p-2 text-xs focus:outline-none resize-none border ${
@@ -2777,7 +2790,8 @@ export const App: React.FC = () => {
                             newVaultType === 'link' ? "DOMAIN (OPTIONAL)" :
                             newVaultType === 'quote' ? "AUTHOR / SPEAKER..." :
                             newVaultType === 'snippet' ? "LANG (e.g. Rust, TS)..." :
-                            "SOURCE..."
+                            newVaultType === 'media' ? "SOURCE..." :
+                            "REMARK / CONTEXT (OPTIONAL)..."
                           }
                           className={`w-full p-1.5 text-xs font-mono-code focus:outline-none border ${
                             isGothic
@@ -2919,10 +2933,12 @@ export const App: React.FC = () => {
                                   ? isGothic ? 'bg-[#D4AF37] text-[#050508]' : isWhite ? 'bg-[#BA1A1A] text-white' : 'bg-[#FF5357] text-[#131317]'
                                   : item.type === 'snippet'
                                   ? 'bg-[#191C1E] text-[#00FF66] border border-[#00FF66]/40'
-                                  : 'bg-[#5C000B] text-white'
+                                  : item.type === 'media'
+                                  ? 'bg-[#5C000B] text-white'
+                                  : isGothic ? 'bg-[#3A2E1A] text-[#E8DCC4] border border-[#D4AF37]/40' : isWhite ? 'bg-[#46464B] text-white' : 'bg-[#2A2A35] text-[#FFB3AF] border border-[#FFB3AF]/30'
                               }`}>
                                 <span className="material-symbols-outlined text-[11px]">
-                                  {item.type === 'link' ? 'link' : item.type === 'quote' ? 'format_quote' : item.type === 'snippet' ? 'terminal' : 'image'}
+                                  {item.type === 'link' ? 'link' : item.type === 'quote' ? 'format_quote' : item.type === 'snippet' ? 'terminal' : item.type === 'media' ? 'image' : 'sticky_note_2'}
                                 </span>
                                 {item.type}
                               </span>
@@ -3008,8 +3024,8 @@ export const App: React.FC = () => {
                                 {copiedSnippetId === item.id ? 'COPIED ✓' : 'COPY'}
                               </button>
                             </div>
-                          ) : (
-                            /* 🖼️ 图片/备忘类型 */
+                          ) : item.type === 'media' ? (
+                            /* 🖼️ 图片/视觉类型 */
                             <div className="my-2 space-y-1.5">
                               {item.imageUrl && (
                                 <img
@@ -3029,6 +3045,21 @@ export const App: React.FC = () => {
                                   {item.content}
                                 </p>
                               )}
+                            </div>
+                          ) : (
+                            /* 📌 杂项 / 自由文本 / 备忘 (OTHER) */
+                            <div className={`my-2 p-2.5 border-dashed border ${
+                              isGothic
+                                ? 'border-[#E8DCC4]/25 bg-[#050508] text-[#E8DCC4]'
+                                : isWhite
+                                ? 'border-[#D8DADC] bg-[#F8F9FB] text-[#191C1E]'
+                                : 'border-[#5F3E3D] bg-[#18181D] text-[#E4E1E7]'
+                            }`}>
+                              <p className={`text-xs leading-relaxed whitespace-pre-wrap ${
+                                isGothic ? 'font-chivo' : 'font-space'
+                              }`}>
+                                {item.content}
+                              </p>
                             </div>
                           )}
 

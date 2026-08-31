@@ -1,5 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  playClickSound,
+  playKillSound,
+  playTearSound,
+  playRebootSound,
+  playDecryptSound,
+  toggleSound,
+} from './utils/audio';
 
 type TabType = 'diary' | 'goals' | 'sparks' | 'vault' | 'shit';
 
@@ -58,6 +66,8 @@ export const App: React.FC = () => {
   const [showTornBanner, setShowTornBanner] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedPreviewImage, setSelectedPreviewImage] = useState<string | null>(null);
+  const [soundActive, setSoundActive] = useState(true);
+  const [isScreenShaking, setIsScreenShaking] = useState(false);
 
   const isWhite = theme === 'prts_white';
   const isGothic = theme === 'heaven_grief';
@@ -261,6 +271,7 @@ export const App: React.FC = () => {
     e.preventDefault();
     if (!diaryText.trim() && diaryImages.length === 0) return;
 
+    playClickSound();
     const newLog: DiaryEntry = {
       id: Date.now().toString(),
       time: `${formatRealDateTime()} | LOG_${diaries.length + 1}`,
@@ -280,10 +291,17 @@ export const App: React.FC = () => {
       prev.map((g) => {
         if (g.id === id) {
           const nextKilled = !g.killed;
-          if (nextKilled && typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-            try {
-              navigator.vibrate(50);
-            } catch (e) {}
+          if (nextKilled) {
+            playKillSound();
+            setIsScreenShaking(true);
+            setTimeout(() => setIsScreenShaking(false), 250);
+            if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+              try {
+                navigator.vibrate([60, 40, 80]);
+              } catch (e) {}
+            }
+          } else {
+            playClickSound();
           }
           return { ...g, killed: nextKilled };
         }
@@ -293,6 +311,7 @@ export const App: React.FC = () => {
   };
 
   const toggleExpandGoal = (id: string) => {
+    playClickSound();
     setExpandedGoalIds((prev) => ({
       ...prev,
       [id]: !prev[id],
@@ -303,6 +322,7 @@ export const App: React.FC = () => {
     e.preventDefault();
     if (!newGoalText.trim()) return;
 
+    playClickSound();
     const newId = Date.now().toString();
     const newGoal: GoalItem = {
       id: newId,
@@ -323,6 +343,7 @@ export const App: React.FC = () => {
     const text = (effortInputTexts[goalId] || '').trim();
     if (!text) return;
 
+    playClickSound();
     const newLog: GoalEffortLog = {
       id: Date.now().toString(),
       time: formatRealDateTime(),
@@ -342,6 +363,7 @@ export const App: React.FC = () => {
     e.preventDefault();
     if (!newSparkTitle.trim()) return;
 
+    playClickSound();
     // 解析标签（逗号或空格分割）
     const parsedTags = newSparkTags
       .split(/[,，\s]+/)
@@ -374,6 +396,7 @@ export const App: React.FC = () => {
   void handleToggleSparkPriority;
   function handleToggleSparkPriority(id: string, e?: React.MouseEvent) {
     if (e) e.stopPropagation();
+    playClickSound();
     setSparks((prev) => {
       const updated = prev.map((s) => (s.id === id ? { ...s, isPriority: !s.isPriority } : s));
       return updated.sort((a, b) => (b.isPriority ? 1 : 0) - (a.isPriority ? 1 : 0));
@@ -382,12 +405,14 @@ export const App: React.FC = () => {
 
   const handleDeleteSpark = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    playKillSound();
     setSparks((prev) => prev.filter((s) => s.id !== id));
     if (editingSparkId === id) setEditingSparkId(null);
   };
 
   const handleStartEditSpark = (spark: SparkItem, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    playClickSound();
     setEditingSparkId(spark.id);
     setEditSparkDraft({
       title: spark.title,
@@ -401,6 +426,7 @@ export const App: React.FC = () => {
     e.preventDefault();
     if (!editSparkDraft.title.trim()) return;
 
+    playClickSound();
     const parsedTags = editSparkDraft.tags
       .split(/[,，\s]+/)
       .map((t) => t.trim().toUpperCase())
@@ -425,6 +451,7 @@ export const App: React.FC = () => {
   };
 
   const handleCancelEditSpark = () => {
+    playClickSound();
     setEditingSparkId(null);
   };
 
@@ -432,6 +459,7 @@ export const App: React.FC = () => {
     e.preventDefault();
     if (!newVaultTitle.trim() || !newVaultContent.trim()) return;
 
+    playClickSound();
     const parsedTags = newVaultTags
       .split(/[,，\s]+/)
       .map((t) => t.trim().toUpperCase())
@@ -463,10 +491,12 @@ export const App: React.FC = () => {
 
   const handleDeleteVaultItem = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    playKillSound();
     setVaultItems((prev) => prev.filter((v) => v.id !== id));
   };
 
   const handleDecryptVault = (id: string) => {
+    playDecryptSound();
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       try {
         navigator.vibrate(60);
@@ -489,32 +519,56 @@ export const App: React.FC = () => {
 
   // 全局核心破坏仪式：TEAR IT (FUCK / 彻底撕毁重开)
   const triggerTearIt = () => {
+    playTearSound();
+    setIsScreenShaking(true);
     setIsTearing(true);
 
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       try {
-        navigator.vibrate([80, 60, 150]);
+        navigator.vibrate([100, 50, 200, 50, 100]);
       } catch (e) {}
     }
 
     setTimeout(() => {
-      setSessionId(`${Math.floor(Math.random() * 900 + 100)}-SYS`);
-      setDiaries([]);
-      setGoals([
-        {
-          id: 'g-new',
-          code: '0x001_RESET',
-          title: 'RISE FROM THE ASHES',
-          killed: false,
-          time: '00:00',
-          logs: [],
-        },
-      ]);
-      setSparks([]);
+      setIsScreenShaking(false);
       setIsTearing(false);
       setShowTornBanner(true);
-      setTimeout(() => setShowTornBanner(false), 2400);
     }, 450);
+  };
+
+  // 手动复活并重启系统 (Resurrect & Reboot)
+  const handleResurrectReboot = () => {
+    playRebootSound();
+    setIsScreenShaking(true);
+
+    setSessionId(`${Math.floor(Math.random() * 900 + 100)}-SYS`);
+    setDiaries([]);
+    setGoals([
+      {
+        id: 'g-new',
+        code: '0x001_RESET',
+        title: 'RISE FROM THE ASHES',
+        killed: false,
+        time: '00:00',
+        logs: [],
+      },
+    ]);
+    setSparks([]);
+
+    setTimeout(() => {
+      setShowTornBanner(false);
+      setIsScreenShaking(false);
+    }, 250);
+  };
+
+  const handleSwitchTab = (tab: TabType) => {
+    playClickSound();
+    setActiveTab(tab);
+  };
+
+  const handleSwitchTheme = (newTheme: ThemeMode) => {
+    playClickSound();
+    setTheme(newTheme);
   };
 
   return (
@@ -526,8 +580,10 @@ export const App: React.FC = () => {
         : 'bg-[#0E0E11] text-[#E4E1E7] scanline-bg font-chivo'
     }`}>
       
-      {/* 手机客户端主外壳容器 */}
+      {/* 手机客户端主外壳容器 (支持打击感屏幕微震) */}
       <div className={`relative w-full max-w-md h-screen sm:h-[880px] sm:max-h-[94vh] flex flex-col sm:border-2 overflow-hidden ${
+        isScreenShaking ? 'screen-shake' : ''
+      } ${
         isGothic
           ? 'bg-[#050508] border-[#E8DCC4]/30 shadow-[0_0_30px_rgba(0,0,0,0.9)] sm:shadow-[0_0_25px_rgba(232,220,196,0.15)]'
           : isWhite
@@ -549,7 +605,10 @@ export const App: React.FC = () => {
             {/* 侧边栏汉堡菜单按钮 */}
             <button
               type="button"
-              onClick={() => setIsSidebarOpen(true)}
+              onClick={() => {
+                playClickSound();
+                setIsSidebarOpen(true);
+              }}
               className={`p-1.5 border transition-all cursor-pointer flex items-center justify-center ${
                 isGothic
                   ? 'border-[#E8DCC4]/40 bg-transparent text-[#E8DCC4] hover:bg-[#E8DCC4] hover:text-[#050508]'
@@ -587,33 +646,63 @@ export const App: React.FC = () => {
             </span>
           </div>
 
-          {/* ⚡ FUCK / HELLFALL 重置大招 */}
-          <motion.button
-            onClick={triggerTearIt}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.95 }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs transition-all group cursor-pointer ${
-              isGothic
-                ? 'border border-[#FF2442] bg-[#120508] text-[#FF2442] hover:bg-[#FF2442] hover:text-white glow-crimson-laser'
-                : isWhite
-                ? 'bg-[#BA1A1A] text-white btn-chamfer border-none shadow-[2px_2px_0px_0px_#191C1E] hover:bg-[#93000A]'
-                : 'border-2 border-[#FFB3AF] bg-[#1F1F23] hover:bg-[#FFB3AF] hover:text-[#68000E] text-[#FFB3AF] shadow-[3px_3px_0px_0px_#FF5357] hover:shadow-[1px_1px_0px_0px_#FF5357]'
-            }`}
-            title="TEAR CURRENT SESSION // HARD REBOOT"
-          >
-            <span className={`font-bold tracking-wider uppercase ${
-              isGothic
-                ? 'font-bodoni text-xs text-[#FF2442] group-hover:text-white'
-                : isWhite
-                ? 'font-space text-xs'
-                : 'font-anton text-base text-[#FF5357] group-hover:text-[#68000E]'
-            }`}>
-              {isGothic ? 'HELLFALL' : 'FUCK'}
-            </span>
-            <span className="material-symbols-outlined text-[16px] group-hover:rotate-180 transition-transform duration-300">
-              restart_alt
-            </span>
-          </motion.button>
+          <div className="flex items-center gap-2">
+            {/* SFX 战术音效指示灯与开关 */}
+            <button
+              type="button"
+              onClick={() => {
+                const next = toggleSound();
+                setSoundActive(next);
+                if (next) playClickSound();
+              }}
+              className={`p-1.5 border transition-all cursor-pointer flex items-center justify-center ${
+                isGothic
+                  ? soundActive
+                    ? 'border-[#D4AF37]/50 text-[#E8DCC4] bg-[#0A0A0F] hover:border-[#E8DCC4]'
+                    : 'border-transparent text-[#888890] hover:text-[#E8DCC4]'
+                  : isWhite
+                  ? soundActive
+                    ? 'border-[#191C1E] bg-[#191C1E] text-white hover:bg-[#006875]'
+                    : 'border-[#D8DADC] text-[#76777B] hover:text-[#191C1E]'
+                  : soundActive
+                  ? 'border-[#FFB3AF] text-[#FFB3AF] bg-[#1F1F23] hover:border-[#FF5357]'
+                  : 'border-transparent text-[#5F3E3D] hover:text-[#FFB3AF]'
+              }`}
+              title={soundActive ? 'SOUND FX: ON (CLICK TO MUTE)' : 'SOUND FX: MUTED (CLICK TO UNMUTE)'}
+            >
+              <span className="material-symbols-outlined text-[16px] block leading-none">
+                {soundActive ? 'volume_up' : 'volume_off'}
+              </span>
+            </button>
+
+            {/* ⚡ FUCK / HELLFALL 重置大招 */}
+            <motion.button
+              onClick={triggerTearIt}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.95 }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs transition-all group cursor-pointer ${
+                isGothic
+                  ? 'border border-[#FF2442] bg-[#120508] text-[#FF2442] hover:bg-[#FF2442] hover:text-white glow-crimson-laser'
+                  : isWhite
+                  ? 'bg-[#BA1A1A] text-white btn-chamfer border-none shadow-[2px_2px_0px_0px_#191C1E] hover:bg-[#93000A]'
+                  : 'border-2 border-[#FFB3AF] bg-[#1F1F23] hover:bg-[#FFB3AF] hover:text-[#68000E] text-[#FFB3AF] shadow-[3px_3px_0px_0px_#FF5357] hover:shadow-[1px_1px_0px_0px_#FF5357]'
+              }`}
+              title="TEAR CURRENT SESSION // HARD REBOOT"
+            >
+              <span className={`font-bold tracking-wider uppercase ${
+                isGothic
+                  ? 'font-bodoni text-xs text-[#FF2442] group-hover:text-white'
+                  : isWhite
+                  ? 'font-space text-xs'
+                  : 'font-anton text-base text-[#FF5357] group-hover:text-[#68000E]'
+              }`}>
+                {isGothic ? 'HELLFALL' : 'FUCK'}
+              </span>
+              <span className="material-symbols-outlined text-[16px] group-hover:rotate-180 transition-transform duration-300">
+                restart_alt
+              </span>
+            </motion.button>
+          </div>
         </header>
 
         {/* ========================================================================= */}
@@ -3125,7 +3214,7 @@ export const App: React.FC = () => {
 
                 <div className="pt-2">
                   <button
-                    onClick={() => setActiveTab('diary')}
+                    onClick={() => handleSwitchTab('diary')}
                     className={`px-4 py-2 font-mono-code text-xs font-bold uppercase transition-colors cursor-pointer ${
                       isGothic
                         ? 'border border-[#E8DCC4] bg-[#E8DCC4] text-[#050508] hover:bg-white'
@@ -3154,7 +3243,7 @@ export const App: React.FC = () => {
           
           {/* 日记 */}
           <button
-            onClick={() => setActiveTab('diary')}
+            onClick={() => handleSwitchTab('diary')}
             className={`flex flex-col items-center justify-center p-1.5 transition-all cursor-pointer ${
               activeTab === 'diary'
                 ? isGothic
@@ -3173,7 +3262,7 @@ export const App: React.FC = () => {
 
           {/* 目标 */}
           <button
-            onClick={() => setActiveTab('goals')}
+            onClick={() => handleSwitchTab('goals')}
             className={`flex flex-col items-center justify-center p-1.5 transition-all cursor-pointer ${
               activeTab === 'goals'
                 ? isGothic
@@ -3192,7 +3281,7 @@ export const App: React.FC = () => {
 
           {/* 灵感 */}
           <button
-            onClick={() => setActiveTab('sparks')}
+            onClick={() => handleSwitchTab('sparks')}
             className={`flex flex-col items-center justify-center p-1.5 transition-all cursor-pointer ${
               activeTab === 'sparks'
                 ? isGothic
@@ -3211,7 +3300,7 @@ export const App: React.FC = () => {
 
           {/* 收藏 */}
           <button
-            onClick={() => setActiveTab('vault')}
+            onClick={() => handleSwitchTab('vault')}
             className={`flex flex-col items-center justify-center p-1.5 transition-all cursor-pointer ${
               activeTab === 'vault'
                 ? isGothic
@@ -3230,26 +3319,104 @@ export const App: React.FC = () => {
 
         </nav>
 
-        {/* 撕毁重开全屏横幅 (强尼·银手 2023 昨日重现彩蛋) */}
+        {/* 🌟 撕毁重开全屏接管视窗 (不再自动跳转，停留等待用户手动点击复活) */}
         <AnimatePresence>
           {showTornBanner && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
+              initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="absolute inset-0 z-50 bg-[#131317]/95 flex flex-col items-center justify-center p-6 text-center"
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              className={`absolute inset-0 z-50 flex flex-col items-center justify-center p-6 text-center select-none ${
+                isGothic
+                  ? 'bg-[#020204]/98 text-[#F5F5FA]'
+                  : isWhite
+                  ? 'bg-[#F2F4F6]/98 text-[#191C1E] bg-blueprint'
+                  : 'bg-[#0E0E11]/98 text-[#E4E1E7] scanline-bg'
+              }`}
             >
-              <div className="border-4 border-[#FF5357] p-5 bg-[#0E0E11] shadow-[8px_8px_0px_0px_#FF5357]">
-                <div className="font-mono-code text-[10px] text-[#FFB3AF] tracking-widest uppercase mb-1">
-                  // SILVERHAND_RESONANCE [2023_FLASHBACK]
+              {isGothic ? (
+                /* ⚜️ HEAVEN_GRIEF 哥特涅槃重开 */
+                <div className="border border-[#D4AF37]/60 p-6 bg-[#08080C] shadow-[0_0_40px_rgba(212,175,55,0.25)] max-w-xs space-y-4">
+                  <div className="w-12 h-12 mx-auto border border-[#D4AF37] flex items-center justify-center text-[#D4AF37] glow-gold-wire">
+                    <span className="material-symbols-outlined text-2xl">local_fire_department</span>
+                  </div>
+                  <div>
+                    <div className="font-mono-code text-[9px] text-[#D4AF37] tracking-widest uppercase mb-1">
+                      // CELESTIAL_PURGE [0x99_HELLFALL]
+                    </div>
+                    <h2 className="font-bodoni text-2xl text-[#F5F5FA] font-bold tracking-wider leading-tight">
+                      ASHES OF SANCTUM
+                    </h2>
+                    <p className="font-chivo text-xs text-[#888890] mt-2 leading-relaxed">
+                      All mortal verses dissolved. The slate has returned to primordial void.
+                    </p>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={handleResurrectReboot}
+                      className="w-full border border-[#D4AF37] bg-[#D4AF37] text-[#050508] hover:bg-white font-bodoni text-xs font-bold uppercase py-3 transition-all cursor-pointer shadow-[0_0_15px_rgba(212,175,55,0.4)] active:scale-95"
+                    >
+                      ✦ [ RESURRECT // REBIRTH ] ✦
+                    </button>
+                  </div>
                 </div>
-                <div className="font-anton text-3xl sm:text-4xl text-[#FF5357] tracking-wider uppercase leading-tight">
-                  PARTY LIKE IT'S 2023
+              ) : isWhite ? (
+                /* ⚪ PRTS_WHITE 罗德岛协议重载 */
+                <div className="border-2 border-[#191C1E] p-6 bg-white shadow-[8px_8px_0px_0px_#191C1E] max-w-xs space-y-4 crop-marks">
+                  <div className="flex items-center justify-between border-b border-[#D8DADC] pb-2">
+                    <span className="bg-[#BA1A1A] text-white font-mono-code text-[9px] px-1.5 py-0.5 font-bold uppercase">
+                      CRITICAL_REBOOT
+                    </span>
+                    <span className="font-mono-code text-[9px] text-[#76777B]">PRTS_SYS_001</span>
+                  </div>
+                  <div>
+                    <h2 className="font-space text-2xl font-bold text-[#191C1E] uppercase tracking-wide leading-tight">
+                      SYSTEM PURGED
+                    </h2>
+                    <p className="font-space text-xs text-[#46464B] mt-2 leading-relaxed">
+                      All tactical buffers flushed. Terminal offline awaiting manual operator reboot sequence.
+                    </p>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={handleResurrectReboot}
+                      className="w-full bg-[#191C1E] text-white hover:bg-[#006875] font-mono-code text-xs font-bold uppercase py-3 transition-all cursor-pointer shadow-[4px_4px_0px_0px_#BA1A1A] active:translate-x-0.5 active:translate-y-0.5 btn-chamfer"
+                    >
+                      ▶ [ INITIALIZE REBOOT SEQUENCE ⟳ ]
+                    </button>
+                  </div>
                 </div>
-                <p className="font-mono-code text-xs text-[#E4E1E7] mt-2.5">
-                  [ WAKE THE FUCK UP, SAMURAI · WE HAVE A CITY TO BURN ]
-                </p>
-              </div>
+              ) : (
+                /* 🌑 SYS_REBEL 强尼·银手 2023 赛博重开 */
+                <div className="border-4 border-[#FF5357] p-6 bg-[#0E0E11] shadow-[8px_8px_0px_0px_#FF5357] max-w-xs space-y-4 pulse-glow-red">
+                  <div>
+                    <div className="font-mono-code text-[10px] text-[#FFB3AF] tracking-widest uppercase mb-1">
+                      // SILVERHAND_RESONANCE [2023_FLASHBACK]
+                    </div>
+                    <h2 className="font-anton text-3xl text-[#FF5357] tracking-wider uppercase leading-tight">
+                      PARTY LIKE IT'S 2023
+                    </h2>
+                    <p className="font-mono-code text-xs text-[#E4E1E7] mt-2 leading-relaxed">
+                      [ WAKE THE FUCK UP, SAMURAI · WE HAVE A CITY TO BURN ]
+                    </p>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={handleResurrectReboot}
+                      className="w-full border-2 border-[#FFB3AF] bg-[#FF5357] text-[#0E0E11] hover:bg-[#FFB3AF] font-anton text-lg tracking-widest uppercase py-3 transition-all cursor-pointer shadow-[4px_4px_0px_0px_#FFFFFF] active:translate-x-0.5 active:translate-y-0.5"
+                    >
+                      ⚡ [ WAKE UP // RESURRECT ] ⚡
+                    </button>
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -3263,7 +3430,10 @@ export const App: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 0.7 }}
                 exit={{ opacity: 0 }}
-                onClick={() => setIsSidebarOpen(false)}
+                onClick={() => {
+                  playClickSound();
+                  setIsSidebarOpen(false);
+                }}
                 className="absolute inset-0 bg-black z-40 cursor-pointer"
               />
 
@@ -3303,7 +3473,10 @@ export const App: React.FC = () => {
                       </p>
                     </div>
                     <button
-                      onClick={() => setIsSidebarOpen(false)}
+                      onClick={() => {
+                        playClickSound();
+                        setIsSidebarOpen(false);
+                      }}
                       className={`px-2 py-0.5 font-mono-code text-xs font-bold transition-colors cursor-pointer border ${
                         isGothic
                           ? 'border-[#E8DCC4]/40 text-[#E8DCC4] hover:bg-[#E8DCC4] hover:text-[#050508]'
@@ -3339,7 +3512,7 @@ export const App: React.FC = () => {
                     <div className="grid grid-cols-3 gap-1 pt-1">
                       <button
                         type="button"
-                        onClick={() => setTheme('cyber_rebel')}
+                        onClick={() => handleSwitchTheme('cyber_rebel')}
                         className={`py-2 px-0.5 text-center font-mono-code text-[9px] font-bold uppercase transition-all cursor-pointer border ${
                           isCyber
                             ? 'bg-[#FF5357] text-white border-[#FF5357] shadow-[2px_2px_0px_0px_#131317]'
@@ -3351,7 +3524,7 @@ export const App: React.FC = () => {
 
                       <button
                         type="button"
-                        onClick={() => setTheme('prts_white')}
+                        onClick={() => handleSwitchTheme('prts_white')}
                         className={`py-2 px-0.5 text-center font-mono-code text-[9px] font-bold uppercase transition-all cursor-pointer border ${
                           isWhite
                             ? 'bg-[#191C1E] text-white border-[#191C1E] shadow-[2px_2px_0px_0px_#006875]'
@@ -3363,7 +3536,7 @@ export const App: React.FC = () => {
 
                       <button
                         type="button"
-                        onClick={() => setTheme('heaven_grief')}
+                        onClick={() => handleSwitchTheme('heaven_grief')}
                         className={`py-2 px-0.5 text-center font-mono-code text-[9px] font-bold uppercase transition-all cursor-pointer border ${
                           isGothic
                             ? 'bg-[#E8DCC4] text-[#050508] border-[#E8DCC4] shadow-[0_0_8px_rgba(232,220,196,0.4)]'
@@ -3392,7 +3565,7 @@ export const App: React.FC = () => {
                       <button
                         key={tab.id}
                         onClick={() => {
-                          setActiveTab(tab.id as TabType);
+                          handleSwitchTab(tab.id as TabType);
                           setIsSidebarOpen(false);
                         }}
                         className={`w-full flex items-center justify-between p-2 text-left border transition-all cursor-pointer ${
@@ -3401,7 +3574,7 @@ export const App: React.FC = () => {
                               ? 'bg-[#E8DCC4] text-[#050508] border-[#E8DCC4] font-bold shadow-[0_0_8px_rgba(232,220,196,0.3)]'
                               : isWhite
                               ? 'bg-[#191C1E] text-white border-[#191C1E] font-bold shadow-[2px_2px_0px_0px_#76777B]'
-                              : 'bg-[#FFB3AF] text-[#68000E] border-[#FFB3AF] font-bold shadow-[2px_2px_0px_0px_#131317]'
+                              : 'bg-[#FF5357] text-[#68000E] border-[#FFB3AF] font-bold shadow-[2px_2px_0px_0px_#131317]'
                             : isGothic
                               ? 'border-transparent text-[#888890] hover:text-[#E8DCC4]'
                               : isWhite

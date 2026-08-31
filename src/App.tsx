@@ -3297,12 +3297,15 @@ export const App: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={handleResurrectReboot}
+              style={{
+                backgroundColor: isGothic ? '#020204' : isWhite ? '#ECEEF0' : '#0E0E11',
+              }}
               className={`absolute inset-0 z-50 flex flex-col items-center justify-between p-8 text-center cursor-pointer select-none ${
                 isGothic
-                  ? 'bg-[#020204] text-[#F5F5FA]'
+                  ? 'text-[#F5F5FA]'
                   : isWhite
-                  ? 'bg-[#ECEEF0] text-[#191C1E] bg-blueprint'
-                  : 'bg-[#0E0E11] text-[#E4E1E7] scanline-bg'
+                  ? 'text-[#191C1E] bg-blueprint'
+                  : 'text-[#E4E1E7] scanline-bg'
               }`}
             >
               {/* 顶部微标 */}

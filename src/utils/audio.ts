@@ -1,4 +1,4 @@
-﻿// True Physical & Acoustic Sample Modeling Engine (真实物理录音级微声采样引擎)
+﻿// Studio-Grade Tactile & Dopamine Audio Engine (高级触觉与多巴胺声学物理引擎)
 
 let audioCtx: AudioContext | null = null;
 let soundEnabled = true;
@@ -31,7 +31,7 @@ export function toggleSound(enabled?: boolean): boolean {
   return soundEnabled;
 }
 
-// 1. 真实客制化机械键盘 (Real Mechanical Switch "Thock" & Stem Clack)
+// 1. 极致解压的触觉气泡微动音 (Ultra-Satisfying Tactile "Pop-Tok" / iOS Switch)
 export function playClickSound() {
   if (!soundEnabled) return;
   const ctx = getAudioContext();
@@ -39,38 +39,26 @@ export function playClickSound() {
 
   const now = ctx.currentTime;
 
-  // 1. Bottom-out housing thock (轴心触底沉闷木质声 180Hz -> 60Hz)
-  const thock = ctx.createOscillator();
-  const thockGain = ctx.createGain();
-  thock.type = 'triangle';
-  thock.frequency.setValueAtTime(240, now);
-  thock.frequency.exponentialRampToValueAtTime(55, now + 0.035);
+  // Warm round pop (柔和饱满的木质微气泡音 520Hz -> 220Hz)
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
 
-  thockGain.gain.setValueAtTime(0.22, now);
-  thockGain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(560, now);
+  osc.frequency.exponentialRampToValueAtTime(240, now + 0.022);
 
-  thock.connect(thockGain);
-  thockGain.connect(ctx.destination);
-  thock.start(now);
-  thock.stop(now + 0.035);
+  gain.gain.setValueAtTime(0.001, now);
+  gain.gain.linearRampToValueAtTime(0.14, now + 0.003);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.022);
 
-  // 2. Leaf ping / stem contact click (弹片与轴心撞击高频清脆切片 3.8kHz)
-  const snap = ctx.createOscillator();
-  const snapGain = ctx.createGain();
-  snap.type = 'sine';
-  snap.frequency.setValueAtTime(3600, now);
-  snap.frequency.exponentialRampToValueAtTime(900, now + 0.012);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
 
-  snapGain.gain.setValueAtTime(0.08, now);
-  snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.012);
-
-  snap.connect(snapGain);
-  snapGain.connect(ctx.destination);
-  snap.start(now);
-  snap.stop(now + 0.012);
+  osc.start(now);
+  osc.stop(now + 0.022);
 }
 
-// 2. 真实重型物理印章盖印声 (Real Heavy Wooden / Metal Desk Stamp Impact)
+// 2. 斩杀胜利重击盖章音 (Triumphant Desk Stamp "THUD-SNAP!" / JoyCon Clack)
 export function playKillSound() {
   if (!soundEnabled) return;
   const ctx = getAudioContext();
@@ -78,27 +66,59 @@ export function playKillSound() {
 
   const now = ctx.currentTime;
 
-  // 1. Heavy desk table thump (木桌沉重撞击低音 85Hz)
-  const thump = ctx.createOscillator();
-  const thumpGain = ctx.createGain();
-  thump.type = 'sine';
-  thump.frequency.setValueAtTime(95, now);
-  thump.frequency.exponentialRampToValueAtTime(28, now + 0.14);
+  // 1. 沉重桌面低频夯击 (Heavy Sub Thump 75Hz -> 24Hz)
+  const subOsc = ctx.createOscillator();
+  const subGain = ctx.createGain();
+  subOsc.type = 'sine';
+  subOsc.frequency.setValueAtTime(80, now);
+  subOsc.frequency.exponentialRampToValueAtTime(24, now + 0.15);
 
-  thumpGain.gain.setValueAtTime(0.65, now);
-  thumpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+  subGain.gain.setValueAtTime(0.001, now);
+  subGain.gain.linearRampToValueAtTime(0.5, now + 0.004);
+  subGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
 
-  thump.connect(thumpGain);
-  thumpGain.connect(ctx.destination);
-  thump.start(now);
-  thump.stop(now + 0.14);
+  subOsc.connect(subGain);
+  subGain.connect(ctx.destination);
+  subOsc.start(now);
+  subOsc.stop(now + 0.15);
 
-  // 2. Rubber stamp slap transient (印章橡胶面接触纸面清脆啪嗒声)
-  const bufferSize = Math.floor(ctx.sampleRate * 0.04);
+  // 2. 机械卡扣清脆撞击 (Crisp Latch Snap 1200Hz)
+  const snapOsc = ctx.createOscillator();
+  const snapGain = ctx.createGain();
+  snapOsc.type = 'triangle';
+  snapOsc.frequency.setValueAtTime(1200, now);
+  snapOsc.frequency.exponentialRampToValueAtTime(320, now + 0.03);
+
+  snapGain.gain.setValueAtTime(0.001, now);
+  snapGain.gain.linearRampToValueAtTime(0.2, now + 0.002);
+  snapGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
+
+  snapOsc.connect(snapGain);
+  snapGain.connect(ctx.destination);
+  snapOsc.start(now);
+  snapOsc.stop(now + 0.03);
+}
+
+// 3. 真实物理撕纸声 + 真空重置 (Real Organic Paper Rip & Void Drop)
+export function playTearSound() {
+  if (!soundEnabled) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  const now = ctx.currentTime;
+  const dur = 0.26;
+
+  // 真实纸张撕裂纹理
+  const bufferSize = Math.floor(ctx.sampleRate * dur);
   const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
   const data = buffer.getChannelData(0);
+
   for (let i = 0; i < bufferSize; i++) {
-    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.2));
+    const progress = i / bufferSize;
+    // 粗糙撕拉纤维阻尼
+    const tearBurst = (Math.random() * 2 - 1) * Math.sin(i * 0.12);
+    const envelope = Math.sin(progress * Math.PI) * (1 - progress * 0.2);
+    data[i] = tearBurst * envelope;
   }
 
   const noise = ctx.createBufferSource();
@@ -106,115 +126,76 @@ export function playKillSound() {
 
   const filter = ctx.createBiquadFilter();
   filter.type = 'bandpass';
-  filter.frequency.setValueAtTime(1100, now);
-  filter.Q.setValueAtTime(2, now);
-
-  const noiseGain = ctx.createGain();
-  noiseGain.gain.setValueAtTime(0.4, now);
-  noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
-
-  noise.connect(filter);
-  filter.connect(noiseGain);
-  noiseGain.connect(ctx.destination);
-
-  noise.start(now);
-  noise.stop(now + 0.04);
-}
-
-// 3. 真实物理撕纸声采样 (Real Physical Paper Fiber Tearing & Rip)
-export function playTearSound() {
-  if (!soundEnabled) return;
-  const ctx = getAudioContext();
-  if (!ctx) return;
-
-  const now = ctx.currentTime;
-  const dur = 0.32;
-
-  // 真实纸张纤维撕断颗粒声 (Real Paper Rip Transient Wave)
-  const bufferSize = Math.floor(ctx.sampleRate * dur);
-  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-
-  for (let i = 0; i < bufferSize; i++) {
-    // 模拟纤维连续断裂的微突触脉冲
-    const progress = i / bufferSize;
-    const fiberBurst = Math.sin(i * 0.15) * Math.cos(i * 0.07);
-    const noise = (Math.random() * 2 - 1) * 0.8;
-    const envelope = Math.sin(progress * Math.PI) * (1 - progress * 0.3);
-    data[i] = (fiberBurst * 0.4 + noise * 0.6) * envelope;
-  }
-
-  const noiseSource = ctx.createBufferSource();
-  noiseSource.buffer = buffer;
-
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'bandpass';
-  filter.frequency.setValueAtTime(1600, now);
-  filter.frequency.linearRampToValueAtTime(800, now + dur);
-  filter.Q.setValueAtTime(1.8, now);
+  filter.frequency.setValueAtTime(1400, now);
+  filter.frequency.exponentialRampToValueAtTime(500, now + dur);
+  filter.Q.setValueAtTime(2.0, now);
 
   const gain = ctx.createGain();
-  gain.gain.setValueAtTime(0.45, now);
-  gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+  gain.gain.setValueAtTime(0.001, now);
+  gain.gain.linearRampToValueAtTime(0.4, now + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
 
-  noiseSource.connect(filter);
+  noise.connect(filter);
   filter.connect(gain);
   gain.connect(ctx.destination);
 
-  noiseSource.start(now);
-  noiseSource.stop(now + dur);
+  noise.start(now);
+  noise.stop(now + dur);
 }
 
-// 4. 真实物理风铃/铜钵空灵共振 (Real Singing Bowl & Chime Modal Resonance)
+// 4. 治愈系大三和弦唤醒风铃 (Uplifting Major Triad Awakening Chime)
 export function playRebootSound() {
   if (!soundEnabled) return;
   const ctx = getAudioContext();
   if (!ctx) return;
 
   const now = ctx.currentTime;
-  const harmonics = [
-    { freq: 440, gain: 0.18, decay: 0.6 },
-    { freq: 880, gain: 0.08, decay: 0.4 },
-    { freq: 1320, gain: 0.04, decay: 0.25 },
+  // C大调大三和弦纯净琶音 (C5 -> E5 -> G5 -> C6)
+  const notes = [
+    { freq: 523.25, timeOffset: 0.00, gain: 0.16 }, // C5
+    { freq: 659.25, timeOffset: 0.04, gain: 0.14 }, // E5
+    { freq: 783.99, timeOffset: 0.08, gain: 0.13 }, // G5
+    { freq: 1046.50, timeOffset: 0.12, gain: 0.15 }, // C6
   ];
 
-  harmonics.forEach((h) => {
+  notes.forEach(({ freq, timeOffset, gain: noteGain }) => {
+    const startTime = now + timeOffset;
     const osc = ctx.createOscillator();
     const gainNode = ctx.createGain();
 
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(h.freq, now);
+    osc.frequency.setValueAtTime(freq, startTime);
 
-    gainNode.gain.setValueAtTime(0.001, now);
-    gainNode.gain.linearRampToValueAtTime(h.gain, now + 0.02);
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + h.decay);
+    gainNode.gain.setValueAtTime(0.0001, startTime);
+    gainNode.gain.linearRampToValueAtTime(noteGain, startTime + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.45);
 
     osc.connect(gainNode);
     gainNode.connect(ctx.destination);
 
-    osc.start(now);
-    osc.stop(now + h.decay);
+    osc.start(startTime);
+    osc.stop(startTime + 0.45);
   });
 }
 
-// 5. 真实打字机微动齿轮声 (Real Mechanical Typewriter Escapement Click)
+// 5. 极微弱机械齿轮密文滴答声 (Subtle Mechanical Typewriter Ticks)
 export function playDecryptSound() {
   if (!soundEnabled) return;
   const ctx = getAudioContext();
   if (!ctx) return;
 
   const now = ctx.currentTime;
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 3; i++) {
+    const startTime = now + i * 0.03;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    const startTime = now + i * 0.035;
 
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(1400 + i * 80, startTime);
-    osc.frequency.exponentialRampToValueAtTime(400, startTime + 0.015);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(900 + i * 120, startTime);
 
-    gain.gain.setValueAtTime(0.07, startTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.015);
+    gain.gain.setValueAtTime(0.001, startTime);
+    gain.gain.linearRampToValueAtTime(0.05, startTime + 0.002);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.015);
 
     osc.connect(gain);
     gain.connect(ctx.destination);

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   playClickSound,
@@ -63,15 +63,151 @@ export interface VaultItem {
 
 export type ThemeMode = 'cyber_rebel' | 'prts_white' | 'heaven_grief';
 
+function getInitialStorage<T>(key: string, fallback: T): T {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+const DEFAULT_DIARIES: DiaryEntry[] = [
+  {
+    id: 'd-1',
+    time: `2026.8.31 22:15 | LOG_44`,
+    text: 'WHY DOES THE COMPILER HATE ME TODAY... ENDLESS LOOP IN THE MATRIX.',
+    charCount: 62,
+  },
+  {
+    id: 'd-2',
+    time: `2026.8.31 20:30 | LOG_43`,
+    text: 'Meetings that could have been emails. Complete cognitive void.',
+    charCount: 56,
+  },
+];
+
+const DEFAULT_GOALS: GoalItem[] = [
+  {
+    id: 'g-1',
+    code: '0x99F_SYS_FAIL',
+    title: 'SMASH THE CORPORATE SYSTEM',
+    killed: true,
+    time: '2026.8.31 18:00',
+    logs: [
+      { id: 'el-1', time: '2026.8.31 16:30', text: '已解构旧的臃肿模板架构' },
+      { id: 'el-2', time: '2026.8.31 17:40', text: '彻底清空 AI-slop 元素' },
+    ],
+  },
+  {
+    id: 'g-2',
+    code: '0x88A_LEGACY_ASH',
+    title: 'BURN THE OLD CODEBASE',
+    killed: true,
+    time: '2026.8.31 19:15',
+    logs: [
+      { id: 'el-3', time: '2026.8.31 19:00', text: '移除了无用的旧逻辑组件' },
+    ],
+  },
+  {
+    id: 'g-3',
+    code: '0x001_GENESIS',
+    title: 'BUILD THE NEW DIGITAL ORDER',
+    killed: false,
+    time: '2026.8.31 21:00',
+    logs: [
+      { id: 'el-4', time: '2026.8.31 21:30', text: '完成 0ms Web Audio 极速声学引擎' },
+      { id: 'el-5', time: '2026.8.31 22:00', text: '接入全自动本地沙盒数据持久化' },
+    ],
+  },
+];
+
+const DEFAULT_SPARKS: SparkItem[] = [
+  {
+    id: 's-1',
+    tagId: '#ID_001',
+    title: 'REBEL UI SYSTEM',
+    description: 'Burn down pristine corporate templates. Inject chaos, hard offset shadows, and high-voltage crimson.',
+    tags: ['DESIGN SYSTEM', 'CHAOS'],
+    rotation: '',
+    isPriority: true,
+  },
+  {
+    id: 's-2',
+    tagId: '#ID_002',
+    title: 'ANARCHY FLOW',
+    description: 'Execute corruption protocols on pristine logic. Scanlines and hard edges mandatory.',
+    tags: ['PROTOCOL', 'GLITCH'],
+    rotation: '',
+  },
+  {
+    id: 's-3',
+    tagId: '#ID_003',
+    title: 'DATA OVERDOSE',
+    description: 'Too much noise in the feed. Need extreme brutalist filter to isolate pure signals.',
+    tags: ['SIGNAL', 'VOID'],
+    rotation: '',
+  },
+];
+
+const DEFAULT_VAULT_ITEMS: VaultItem[] = [
+  {
+    id: 'v-1',
+    type: 'link',
+    title: 'CYBERPUNK 2077 DESIGN BIBLE',
+    content: 'https://cyberpunk.net',
+    sourceOrAuthor: 'cyberpunk.net',
+    tags: ['INSPIRATION', 'UI_DESIGN'],
+    time: '2026.8.31 20:15',
+  },
+  {
+    id: 'v-2',
+    type: 'quote',
+    title: 'TACTICAL MENTALITY',
+    content: 'He who has a why to live can bear almost any how.',
+    sourceOrAuthor: 'Friedrich Nietzsche',
+    tags: ['PHILOSOPHY', 'RESOLVE'],
+    time: '2026.8.31 18:30',
+  },
+  {
+    id: 'v-3',
+    type: 'snippet',
+    title: 'ZERO-LATENCY AUDIO POOL',
+    content: 'const ctx = new AudioContext();\nconst buf = await ctx.decodeAudioData(arrBuf);\nconst src = ctx.createBufferSource();\nsrc.buffer = buf; src.start(0);',
+    sourceOrAuthor: 'TypeScript',
+    tags: ['DEV', 'WEB_AUDIO'],
+    time: '2026.8.31 16:40',
+  },
+  {
+    id: 'v-4',
+    type: 'link',
+    title: 'KENNEY CC0 GAME ASSETS',
+    content: 'https://kenney.nl/assets',
+    sourceOrAuthor: 'kenney.nl',
+    tags: ['AUDIO', 'RESOURCES'],
+    time: '2026.8.31 14:20',
+  },
+  {
+    id: 'v-5',
+    type: 'other',
+    title: 'RAW MANIFESTO // 0X01',
+    content: 'Reject perfectionism. Ship prototypes fast, test in the wild, iterate brutally with zero regrets.',
+    sourceOrAuthor: 'CORE_DOCTRINE',
+    tags: ['MINDSET', 'TACTICAL'],
+    time: '2026.8.31 12:00',
+  },
+];
+
 export const App: React.FC = () => {
-  const [theme, setTheme] = useState<ThemeMode>('prts_white');
+  const [theme, setTheme] = useState<ThemeMode>(() => getInitialStorage('fk_theme', 'prts_white'));
   const [activeTab, setActiveTab] = useState<TabType>('diary');
   const [sessionId, setSessionId] = useState('994-ERR');
   const [isTearing, setIsTearing] = useState(false);
   const [showTornBanner, setShowTornBanner] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedPreviewImage, setSelectedPreviewImage] = useState<string | null>(null);
-  const [soundActive, setSoundActive] = useState(true);
+  const [soundActive, setSoundActive] = useState(() => getInitialStorage('fk_sound_active', true));
   const [soundProfile, setSoundProfileState] = useState<SoundProfile>(getSoundProfile());
   const [isScreenShaking, setIsScreenShaking] = useState(false);
 
@@ -79,7 +215,7 @@ export const App: React.FC = () => {
   const isGothic = theme === 'heaven_grief';
   const isCyber = theme === 'cyber_rebel';
 
-  // --- DIARY STATE ---
+  // --- DIARY STATE (持久化) ---
   const [diaryText, setDiaryText] = useState('');
   const [diaryImages, setDiaryImages] = useState<string[]>([]);
   const diaryFileInputRef = useRef<HTMLInputElement>(null);
@@ -94,64 +230,22 @@ export const App: React.FC = () => {
     return `${year}.${month}.${day} ${hours}:${minutes}`;
   };
 
-  const [diaries, setDiaries] = useState<DiaryEntry[]>([
-    {
-      id: 'd-1',
-      time: `${formatRealDateTime()} | LOG_44`,
-      text: 'WHY DOES THE COMPILER HATE ME TODAY... ENDLESS LOOP IN THE MATRIX.',
-      charCount: 62,
-    },
-    {
-      id: 'd-2',
-      time: `${formatRealDateTime(new Date(Date.now() - 3600000))} | LOG_43`,
-      text: 'Meetings that could have been emails. Complete cognitive void.',
-      charCount: 56,
-    },
-  ]);
+  const [diaries, setDiaries] = useState<DiaryEntry[]>(() =>
+    getInitialStorage('fk_diaries', DEFAULT_DIARIES)
+  );
 
-  // --- GOALS (KILL-LIST & EFFORTS) STATE ---
+  // --- GOALS (KILL-LIST & EFFORTS) STATE (持久化) ---
   const [newGoalText, setNewGoalText] = useState('');
   const [expandedGoalIds, setExpandedGoalIds] = useState<Record<string, boolean>>({
-    'g-3': true, // 默认展开未完成的目标
+    'g-3': true,
   });
   const [effortInputTexts, setEffortInputTexts] = useState<Record<string, string>>({});
 
-  const [goals, setGoals] = useState<GoalItem[]>([
-    {
-      id: 'g-1',
-      code: '0x99F_SYS_FAIL',
-      title: 'SMASH THE CORPORATE SYSTEM',
-      killed: true,
-      time: formatRealDateTime(new Date(Date.now() - 7200000)),
-      logs: [
-        { id: 'el-1', time: formatRealDateTime(new Date(Date.now() - 8000000)), text: '已解构旧的臃肿模板架构' },
-        { id: 'el-2', time: formatRealDateTime(new Date(Date.now() - 7500000)), text: '彻底清空 AI-slop 元素' },
-      ],
-    },
-    {
-      id: 'g-2',
-      code: '0x88A_LEGACY_ASH',
-      title: 'BURN THE OLD CODEBASE',
-      killed: true,
-      time: formatRealDateTime(new Date(Date.now() - 5400000)),
-      logs: [
-        { id: 'el-3', time: formatRealDateTime(new Date(Date.now() - 5600000)), text: '移除了无用的旧逻辑组件' },
-      ],
-    },
-    {
-      id: 'g-3',
-      code: '0x001_GENESIS',
-      title: 'BUILD THE NEW DIGITAL ORDER',
-      killed: false,
-      time: formatRealDateTime(),
-      logs: [
-        { id: 'el-4', time: formatRealDateTime(new Date(Date.now() - 1800000)), text: '完成 Stitch 赛博粗野朋克界面移植' },
-        { id: 'el-5', time: formatRealDateTime(new Date(Date.now() - 600000)), text: '加入图文混排与 Ctrl+V 截图支持' },
-      ],
-    },
-  ]);
+  const [goals, setGoals] = useState<GoalItem[]>(() =>
+    getInitialStorage('fk_goals', DEFAULT_GOALS)
+  );
 
-  // --- SPARKS (RAW IDEAS) STATE ---
+  // --- SPARKS (RAW IDEAS) STATE (持久化) ---
   const [newSparkTitle, setNewSparkTitle] = useState('');
   const [newSparkDesc, setNewSparkDesc] = useState('');
   const [newSparkTags, setNewSparkTags] = useState('');
@@ -174,35 +268,11 @@ export const App: React.FC = () => {
     isPriority: false,
   });
 
-  const [sparks, setSparks] = useState<SparkItem[]>([
-    {
-      id: 's-1',
-      tagId: '#ID_001',
-      title: 'REBEL UI SYSTEM',
-      description: 'Burn down pristine corporate templates. Inject chaos, hard offset shadows, and high-voltage crimson.',
-      tags: ['DESIGN SYSTEM', 'CHAOS'],
-      rotation: '',
-      isPriority: true,
-    },
-    {
-      id: 's-2',
-      tagId: '#ID_002',
-      title: 'ANARCHY FLOW',
-      description: 'Execute corruption protocols on pristine logic. Scanlines and hard edges mandatory.',
-      tags: ['PROTOCOL', 'GLITCH'],
-      rotation: '',
-    },
-    {
-      id: 's-3',
-      tagId: '#ID_003',
-      title: 'DATA OVERDOSE',
-      description: 'Too much noise in the feed. Need extreme brutalist filter to isolate pure signals.',
-      tags: ['SIGNAL', 'VOID'],
-      rotation: '',
-    },
-  ]);
+  const [sparks, setSparks] = useState<SparkItem[]>(() =>
+    getInitialStorage('fk_sparks', DEFAULT_SPARKS)
+  );
 
-  // --- VAULT (WEB CLIPPINGS & INSPIRATION STASH) STATE ---
+  // --- VAULT (WEB CLIPPINGS & INSPIRATION STASH) STATE (持久化) ---
   const [vaultFilter, setVaultFilter] = useState<'all' | VaultType>('all');
   const [newVaultType, setNewVaultType] = useState<VaultType>('link');
   const [newVaultTitle, setNewVaultTitle] = useState('');
@@ -215,53 +285,46 @@ export const App: React.FC = () => {
   const [copiedSnippetId, setCopiedSnippetId] = useState<string | null>(null);
   const vaultFileInputRef = useRef<HTMLInputElement>(null);
 
-  const [vaultItems, setVaultItems] = useState<VaultItem[]>([
-    {
-      id: 'v-1',
-      type: 'link',
-      title: 'CYBERPUNK 2077 DESIGN BIBLE',
-      content: 'https://cyberpunk.net',
-      sourceOrAuthor: 'cyberpunk.net',
-      tags: ['INSPIRATION', 'UI_DESIGN'],
-      time: '2026.8.31 20:15',
-    },
-    {
-      id: 'v-2',
-      type: 'quote',
-      title: 'TACTICAL MENTALITY',
-      content: 'He who has a why to live can bear almost any how.',
-      sourceOrAuthor: 'Friedrich Nietzsche',
-      tags: ['PHILOSOPHY', 'RESOLVE'],
-      time: '2026.8.31 18:30',
-    },
-    {
-      id: 'v-3',
-      type: 'snippet',
-      title: 'ZERO-LATENCY AUDIO POOL',
-      content: 'const pool = audioPool[path];\nconst audio = pool.find(a => a.paused) || pool[0];\naudio.currentTime = 0;\naudio.play();',
-      sourceOrAuthor: 'TypeScript',
-      tags: ['DEV', 'WEB_AUDIO'],
-      time: '2026.8.31 16:40',
-    },
-    {
-      id: 'v-4',
-      type: 'link',
-      title: 'KENNEY CC0 GAME ASSETS',
-      content: 'https://kenney.nl/assets',
-      sourceOrAuthor: 'kenney.nl',
-      tags: ['AUDIO', 'RESOURCES'],
-      time: '2026.8.31 14:20',
-    },
-    {
-      id: 'v-5',
-      type: 'other',
-      title: 'RAW MANIFESTO // 0X01',
-      content: 'Reject perfectionism. Ship prototypes fast, test in the wild, iterate brutally with zero regrets.',
-      sourceOrAuthor: 'CORE_DOCTRINE',
-      tags: ['MINDSET', 'TACTICAL'],
-      time: '2026.8.31 12:00',
-    },
-  ]);
+  const [vaultItems, setVaultItems] = useState<VaultItem[]>(() =>
+    getInitialStorage('fk_vault_items', DEFAULT_VAULT_ITEMS)
+  );
+
+  // 监听并实时自动写入本地沙盒 (LocalStorage)
+  useEffect(() => {
+    try {
+      localStorage.setItem('fk_theme', JSON.stringify(theme));
+    } catch {}
+  }, [theme]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('fk_sound_active', JSON.stringify(soundActive));
+    } catch {}
+  }, [soundActive]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('fk_diaries', JSON.stringify(diaries));
+    } catch {}
+  }, [diaries]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('fk_goals', JSON.stringify(goals));
+    } catch {}
+  }, [goals]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('fk_sparks', JSON.stringify(sparks));
+    } catch {}
+  }, [sparks]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('fk_vault_items', JSON.stringify(vaultItems));
+    } catch {}
+  }, [vaultItems]);
 
   // --- IMAGE UPLOAD HELPERS ---
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -614,7 +677,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen flex justify-center items-center p-0 sm:p-4 select-none ${
+    <div className={`min-h-[100dvh] flex justify-center items-center p-0 sm:p-4 select-none ${
       isGothic
         ? 'bg-[#020204] text-[#F5F5FA]'
         : isWhite
@@ -622,8 +685,8 @@ export const App: React.FC = () => {
         : 'bg-[#0E0E11] text-[#E4E1E7] scanline-bg font-chivo'
     }`}>
       
-      {/* 手机客户端主外壳容器 (支持打击感屏幕微震) */}
-      <div className={`relative w-full max-w-md h-screen sm:h-[880px] sm:max-h-[94vh] flex flex-col sm:border-2 overflow-hidden ${
+      {/* 手机客户端主外壳容器 (支持打击感屏幕微震与 100dvh 视口自适应) */}
+      <div className={`relative w-full max-w-md h-[100dvh] sm:h-[880px] sm:max-h-[94vh] flex flex-col sm:border-2 overflow-hidden ${
         isScreenShaking ? 'screen-shake' : ''
       } ${
         isGothic

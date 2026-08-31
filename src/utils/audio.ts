@@ -1,21 +1,21 @@
-﻿// Real Open-Source Studio Game Audio Engine (基于 Kenney CC0 专业开源游戏音频库)
+﻿// Cyberpunk & Sci-Fi Terminal Studio Audio Engine (真实赛博黑客终端与机能开源游戏音频引擎)
 
-export type SoundProfile = 'kenney_ui' | 'cyber_glitch' | 'mechanical' | 'retro_arcade';
+export type SoundProfile = 'cyber_terminal' | 'tactical_mech' | 'hacker_matrix' | 'kenney_clean';
 
 let soundEnabled = true;
-let currentProfile: SoundProfile = 'kenney_ui';
+let currentProfile: SoundProfile = 'cyber_terminal';
 
-// 从 localStorage 读取上次选中的音效包
+// 从 localStorage 读取用户选择的音效包，默认是 ⚡ cyber_terminal
 if (typeof window !== 'undefined') {
   const saved = localStorage.getItem('fk_sound_profile') as SoundProfile | null;
-  if (saved && ['kenney_ui', 'cyber_glitch', 'mechanical', 'retro_arcade'].includes(saved)) {
+  if (saved && ['cyber_terminal', 'tactical_mech', 'hacker_matrix', 'kenney_clean'].includes(saved)) {
     currentProfile = saved;
   }
 }
 
-// 缓存与预加载音效池 (零延迟即按即响)
+// 零延迟多实例音频池
 const audioPool: Record<string, HTMLAudioElement[]> = {};
-const POOL_SIZE = 4;
+const POOL_SIZE = 5;
 
 function getAudio(path: string): HTMLAudioElement {
   if (!audioPool[path]) {
@@ -27,7 +27,6 @@ function getAudio(path: string): HTMLAudioElement {
     }
   }
 
-  // 找一个当前闲置或最早播放的音频实例
   const pool = audioPool[path];
   for (const audio of pool) {
     if (audio.paused || audio.ended) {
@@ -41,21 +40,25 @@ function getAudio(path: string): HTMLAudioElement {
   return oldest;
 }
 
-// 预加载所有核心音效
+// 预加载所有赛博终端核心音频
 if (typeof window !== 'undefined') {
   const preloadList = [
+    '/sounds/twoTone1.ogg',
+    '/sounds/twoTone2.ogg',
+    '/sounds/threeTone1.ogg',
+    '/sounds/tone1.ogg',
+    '/sounds/zap1.ogg',
+    '/sounds/zap2.ogg',
+    '/sounds/laser1.ogg',
+    '/sounds/impactPlate_heavy_000.ogg',
+    '/sounds/impactMetal_heavy_000.ogg',
+    '/sounds/phaserDown1.ogg',
+    '/sounds/spaceTrash1.ogg',
+    '/sounds/phaseJump1.ogg',
+    '/sounds/powerUp7.ogg',
+    '/sounds/powerUp10.ogg',
     '/sounds/click_002.wav',
-    '/sounds/click1.wav',
-    '/sounds/switch10.wav',
-    '/sounds/tick_001.wav',
-    '/sounds/drop_001.wav',
-    '/sounds/drop_002.wav',
-    '/sounds/scratch_001.wav',
-    '/sounds/scratch_002.wav',
-    '/sounds/glitch_001.wav',
-    '/sounds/confirmation_001.wav',
-    '/sounds/maximize_001.wav',
-    '/sounds/glass_001.wav',
+    '/sounds/switch12.wav',
   ];
 
   preloadList.forEach((src) => {
@@ -67,7 +70,7 @@ if (typeof window !== 'undefined') {
   });
 }
 
-function playSoundFile(path: string, volume = 0.7) {
+function playSoundFile(path: string, volume = 0.75) {
   if (!soundEnabled || typeof window === 'undefined') return;
   try {
     const audio = getAudio(path);
@@ -75,7 +78,7 @@ function playSoundFile(path: string, volume = 0.7) {
     const playPromise = audio.play();
     if (playPromise !== undefined) {
       playPromise.catch(() => {
-        // 应对浏览器自动播放拦截策略
+        // 自动播放策略保护
       });
     }
   } catch {
@@ -104,92 +107,107 @@ export function setSoundProfile(profile: SoundProfile) {
   playClickSound();
 }
 
-// 1. 点击声 (4 款专业开源游戏 UI 音效切片)
+// ============================================================================
+// 1. 点击 / 切换 TAB / 交互声 (真实赛博终端光标与全息脉冲)
+// ============================================================================
 export function playClickSound() {
   if (!soundEnabled) return;
   switch (currentProfile) {
-    case 'kenney_ui':
-      // Kenney 经典清脆极简微动
+    case 'cyber_terminal':
+      // 2077 HUD 全息数据脉冲滴答
+      playSoundFile('/sounds/twoTone1.ogg', 0.65);
+      break;
+    case 'tactical_mech':
+      // 机能战术金属快门
+      playSoundFile('/sounds/switch12.wav', 0.6);
+      break;
+    case 'hacker_matrix':
+      // 矩阵终端高频数据流
+      playSoundFile('/sounds/tone1.ogg', 0.55);
+      break;
+    case 'kenney_clean':
+      // 极简微动
       playSoundFile('/sounds/click_002.wav', 0.6);
-      break;
-    case 'cyber_glitch':
-      // 战术机能高频开关
-      playSoundFile('/sounds/switch12.wav', 0.5);
-      break;
-    case 'mechanical':
-      // 真实机械开关与打字机
-      playSoundFile('/sounds/click1.wav', 0.65);
-      break;
-    case 'retro_arcade':
-      // 极轻复古微滴答
-      playSoundFile('/sounds/tick_001.wav', 0.6);
       break;
   }
 }
 
-// 2. 斩杀盖章声 (重型下落与确认音效)
+// ============================================================================
+// 2. 斩杀目标 / EXECUTE 协议达成声 (等离子斩击 / 重型装甲砸落)
+// ============================================================================
 export function playKillSound() {
   if (!soundEnabled) return;
   switch (currentProfile) {
-    case 'kenney_ui':
+    case 'cyber_terminal':
+      // 赛博电浆等离子离子电火花斩杀 (Plasma Zap Strike)
+      playSoundFile('/sounds/zap1.ogg', 0.85);
+      break;
+    case 'tactical_mech':
+      // 重型战术金属装甲猛烈夯击 (Heavy Armor Plate Slam)
+      playSoundFile('/sounds/impactPlate_heavy_000.ogg', 0.9);
+      break;
+    case 'hacker_matrix':
+      // 激光阵列熔断斩击 (Laser Target Vaporized)
+      playSoundFile('/sounds/laser1.ogg', 0.8);
+      break;
+    case 'kenney_clean':
       playSoundFile('/sounds/drop_001.wav', 0.8);
-      break;
-    case 'cyber_glitch':
-      playSoundFile('/sounds/drop_002.wav', 0.85);
-      break;
-    case 'mechanical':
-      playSoundFile('/sounds/switch10.wav', 0.9);
-      break;
-    case 'retro_arcade':
-      playSoundFile('/sounds/drop_003.wav', 0.75);
       break;
   }
 }
 
-// 3. 撕纸重置 FUCK 声 (真实撕纸擦拭与 Glitch 爆破)
+// ============================================================================
+// 3. FUCK 撕毁 / 终端崩溃倾倒声 (Terminal Dump / Phaser Down Crash)
+// ============================================================================
 export function playTearSound() {
   if (!soundEnabled) return;
   switch (currentProfile) {
-    case 'kenney_ui':
-    case 'mechanical':
-      // 真实物理纸张刮擦与撕裂
-      playSoundFile('/sounds/scratch_001.wav', 0.85);
+    case 'cyber_terminal':
+      // 赛博神经链接过载熔断 (Phaser Overload Dump)
+      playSoundFile('/sounds/phaserDown1.ogg', 0.85);
       break;
-    case 'cyber_glitch':
-      // 赛博电磁故障重载
-      playSoundFile('/sounds/glitch_001.wav', 0.8);
+    case 'tactical_mech':
+      // 重型金属粉碎撕裂 (Heavy Metal Impact Tear)
+      playSoundFile('/sounds/impactMetal_heavy_000.ogg', 0.85);
       break;
-    case 'retro_arcade':
-      playSoundFile('/sounds/scratch_003.wav', 0.75);
+    case 'hacker_matrix':
+      // 内存垃圾强制抹除 (Memory Buffer Purge)
+      playSoundFile('/sounds/spaceTrash1.ogg', 0.8);
+      break;
+    case 'kenney_clean':
+      playSoundFile('/sounds/scratch_001.wav', 0.8);
       break;
   }
 }
 
-// 4. 重开唤醒声 (通关/确认/风铃和弦)
+// ============================================================================
+// 4. 重开唤醒 / 跃迁上线声 (Cyber Warp / Neural Link Reconnected)
+// ============================================================================
 export function playRebootSound() {
   if (!soundEnabled) return;
   switch (currentProfile) {
-    case 'kenney_ui':
-      // 游戏通关升级音
+    case 'cyber_terminal':
+      // 神经跃迁引擎重启动能 (Phase Jump Warp)
+      playSoundFile('/sounds/phaseJump1.ogg', 0.85);
+      break;
+    case 'tactical_mech':
+      // 罗德岛 PRTS 战术协议全系统充能 (Tactical Power Up)
+      playSoundFile('/sounds/powerUp10.ogg', 0.85);
+      break;
+    case 'hacker_matrix':
+      // 矩阵核心超频上线 (Matrix Core Online)
+      playSoundFile('/sounds/powerUp7.ogg', 0.8);
+      break;
+    case 'kenney_clean':
       playSoundFile('/sounds/confirmation_001.wav', 0.8);
-      break;
-    case 'cyber_glitch':
-      // 赛博系统重构上线
-      playSoundFile('/sounds/maximize_001.wav', 0.8);
-      break;
-    case 'mechanical':
-      // 真实纯净玻璃风铃
-      playSoundFile('/sounds/glass_001.wav', 0.75);
-      break;
-    case 'retro_arcade':
-      // 经典双和弦确认
-      playSoundFile('/sounds/confirmation_002.wav', 0.8);
       break;
   }
 }
 
-// 5. 密文解密滴答声
+// ============================================================================
+// 5. 密文解密 / 黑客破解声 (Hacker Terminal Decrypt)
+// ============================================================================
 export function playDecryptSound() {
   if (!soundEnabled) return;
-  playSoundFile('/sounds/tick_002.wav', 0.5);
+  playSoundFile('/sounds/threeTone1.ogg', 0.6);
 }

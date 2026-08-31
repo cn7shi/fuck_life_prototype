@@ -3556,10 +3556,10 @@ export const App: React.FC = () => {
                       <div className="grid grid-cols-4 gap-1">
                         {(
                           [
-                            { id: 'cyber', label: 'CYBER' },
-                            { id: 'haptic', label: 'HAPTIC' },
-                            { id: 'analog', label: 'ANALOG' },
-                            { id: 'retro', label: '8-BIT' },
+                            { id: 'kenney_ui', label: 'KENNEY' },
+                            { id: 'cyber_glitch', label: 'GLITCH' },
+                            { id: 'mechanical', label: 'MECH' },
+                            { id: 'retro_arcade', label: 'ARCADE' },
                           ] as const
                         ).map((pack) => (
                           <button

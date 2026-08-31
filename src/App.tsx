@@ -3299,10 +3299,10 @@ export const App: React.FC = () => {
               onClick={handleResurrectReboot}
               className={`absolute inset-0 z-50 flex flex-col items-center justify-between p-8 text-center cursor-pointer select-none ${
                 isGothic
-                  ? 'bg-[#020204]/98 text-[#F5F5FA]'
+                  ? 'bg-[#020204] text-[#F5F5FA]'
                   : isWhite
-                  ? 'bg-[#ECEEF0]/98 text-[#191C1E] bg-blueprint'
-                  : 'bg-[#0E0E11]/98 text-[#E4E1E7] scanline-bg'
+                  ? 'bg-[#ECEEF0] text-[#191C1E] bg-blueprint'
+                  : 'bg-[#0E0E11] text-[#E4E1E7] scanline-bg'
               }`}
             >
               {/* 顶部微标 */}

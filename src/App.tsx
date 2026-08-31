@@ -646,63 +646,33 @@ export const App: React.FC = () => {
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* SFX 战术音效指示灯与开关 */}
-            <button
-              type="button"
-              onClick={() => {
-                const next = toggleSound();
-                setSoundActive(next);
-                if (next) playClickSound();
-              }}
-              className={`p-1.5 border transition-all cursor-pointer flex items-center justify-center ${
-                isGothic
-                  ? soundActive
-                    ? 'border-[#D4AF37]/50 text-[#E8DCC4] bg-[#0A0A0F] hover:border-[#E8DCC4]'
-                    : 'border-transparent text-[#888890] hover:text-[#E8DCC4]'
-                  : isWhite
-                  ? soundActive
-                    ? 'border-[#191C1E] bg-[#191C1E] text-white hover:bg-[#006875]'
-                    : 'border-[#D8DADC] text-[#76777B] hover:text-[#191C1E]'
-                  : soundActive
-                  ? 'border-[#FFB3AF] text-[#FFB3AF] bg-[#1F1F23] hover:border-[#FF5357]'
-                  : 'border-transparent text-[#5F3E3D] hover:text-[#FFB3AF]'
-              }`}
-              title={soundActive ? 'SOUND FX: ON (CLICK TO MUTE)' : 'SOUND FX: MUTED (CLICK TO UNMUTE)'}
-            >
-              <span className="material-symbols-outlined text-[16px] block leading-none">
-                {soundActive ? 'volume_up' : 'volume_off'}
-              </span>
-            </button>
-
-            {/* ⚡ FUCK / HELLFALL 重置大招 */}
-            <motion.button
-              onClick={triggerTearIt}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.95 }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs transition-all group cursor-pointer ${
-                isGothic
-                  ? 'border border-[#FF2442] bg-[#120508] text-[#FF2442] hover:bg-[#FF2442] hover:text-white glow-crimson-laser'
-                  : isWhite
-                  ? 'bg-[#BA1A1A] text-white btn-chamfer border-none shadow-[2px_2px_0px_0px_#191C1E] hover:bg-[#93000A]'
-                  : 'border-2 border-[#FFB3AF] bg-[#1F1F23] hover:bg-[#FFB3AF] hover:text-[#68000E] text-[#FFB3AF] shadow-[3px_3px_0px_0px_#FF5357] hover:shadow-[1px_1px_0px_0px_#FF5357]'
-              }`}
-              title="TEAR CURRENT SESSION // HARD REBOOT"
-            >
-              <span className={`font-bold tracking-wider uppercase ${
-                isGothic
-                  ? 'font-bodoni text-xs text-[#FF2442] group-hover:text-white'
-                  : isWhite
-                  ? 'font-space text-xs'
-                  : 'font-anton text-base text-[#FF5357] group-hover:text-[#68000E]'
-              }`}>
-                {isGothic ? 'HELLFALL' : 'FUCK'}
-              </span>
-              <span className="material-symbols-outlined text-[16px] group-hover:rotate-180 transition-transform duration-300">
-                restart_alt
-              </span>
-            </motion.button>
-          </div>
+          {/* ⚡ FUCK / HELLFALL 重置大招 */}
+          <motion.button
+            onClick={triggerTearIt}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.95 }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs transition-all group cursor-pointer ${
+              isGothic
+                ? 'border border-[#FF2442] bg-[#120508] text-[#FF2442] hover:bg-[#FF2442] hover:text-white glow-crimson-laser'
+                : isWhite
+                ? 'bg-[#BA1A1A] text-white btn-chamfer border-none shadow-[2px_2px_0px_0px_#191C1E] hover:bg-[#93000A]'
+                : 'border-2 border-[#FFB3AF] bg-[#1F1F23] hover:bg-[#FFB3AF] hover:text-[#68000E] text-[#FFB3AF] shadow-[3px_3px_0px_0px_#FF5357] hover:shadow-[1px_1px_0px_0px_#FF5357]'
+            }`}
+            title="TEAR CURRENT SESSION // HARD REBOOT"
+          >
+            <span className={`font-bold tracking-wider uppercase ${
+              isGothic
+                ? 'font-bodoni text-xs text-[#FF2442] group-hover:text-white'
+                : isWhite
+                ? 'font-space text-xs'
+                : 'font-anton text-base text-[#FF5357] group-hover:text-[#68000E]'
+            }`}>
+              {isGothic ? 'HELLFALL' : 'FUCK'}
+            </span>
+            <span className="material-symbols-outlined text-[16px] group-hover:rotate-180 transition-transform duration-300">
+              restart_alt
+            </span>
+          </motion.button>
         </header>
 
         {/* ========================================================================= */}
@@ -3319,104 +3289,83 @@ export const App: React.FC = () => {
 
         </nav>
 
-        {/* 🌟 撕毁重开全屏接管视窗 (不再自动跳转，停留等待用户手动点击复活) */}
+        {/* 🌟 撕毁重开全屏接管视窗 (全屏赛博/战术/哥特浩劫氛围，点击任意处唤醒重开) */}
         <AnimatePresence>
           {showTornBanner && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-              className={`absolute inset-0 z-50 flex flex-col items-center justify-center p-6 text-center select-none ${
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={handleResurrectReboot}
+              className={`absolute inset-0 z-50 flex flex-col items-center justify-between p-8 text-center cursor-pointer select-none ${
                 isGothic
                   ? 'bg-[#020204]/98 text-[#F5F5FA]'
                   : isWhite
-                  ? 'bg-[#F2F4F6]/98 text-[#191C1E] bg-blueprint'
+                  ? 'bg-[#ECEEF0]/98 text-[#191C1E] bg-blueprint'
                   : 'bg-[#0E0E11]/98 text-[#E4E1E7] scanline-bg'
               }`}
             >
-              {isGothic ? (
-                /* ⚜️ HEAVEN_GRIEF 哥特涅槃重开 */
-                <div className="border border-[#D4AF37]/60 p-6 bg-[#08080C] shadow-[0_0_40px_rgba(212,175,55,0.25)] max-w-xs space-y-4">
-                  <div className="w-12 h-12 mx-auto border border-[#D4AF37] flex items-center justify-center text-[#D4AF37] glow-gold-wire">
-                    <span className="material-symbols-outlined text-2xl">local_fire_department</span>
-                  </div>
-                  <div>
-                    <div className="font-mono-code text-[9px] text-[#D4AF37] tracking-widest uppercase mb-1">
-                      // CELESTIAL_PURGE [0x99_HELLFALL]
+              {/* 顶部微标 */}
+              <div className={`font-mono-code text-[10px] tracking-widest uppercase border px-2.5 py-1 ${
+                isGothic
+                  ? 'border-[#D4AF37]/50 text-[#D4AF37] bg-[#0A0A0F]'
+                  : isWhite
+                  ? 'border-[#191C1E] bg-[#191C1E] text-white'
+                  : 'border-[#FF5357] text-[#FF5357] bg-[#131317]'
+              }`}>
+                {isGothic ? '// CELESTIAL_VOID [0x99_HELLFALL]' : isWhite ? '// PRTS_EMERGENCY_OVERRIDE [0x99_PURGE]' : '// SILVERHAND_RESONANCE [2023_FLASHBACK]'}
+              </div>
+
+              {/* 中间核心视觉大字 */}
+              <div className="space-y-3 max-w-xs my-auto">
+                {isGothic ? (
+                  <>
+                    <div className="w-16 h-16 mx-auto border border-[#D4AF37] flex items-center justify-center text-[#D4AF37] glow-gold-wire">
+                      <span className="material-symbols-outlined text-3xl">local_fire_department</span>
                     </div>
-                    <h2 className="font-bodoni text-2xl text-[#F5F5FA] font-bold tracking-wider leading-tight">
+                    <h2 className="font-bodoni text-3xl text-[#F5F5FA] font-bold tracking-wider leading-tight">
                       ASHES OF SANCTUM
                     </h2>
-                    <p className="font-chivo text-xs text-[#888890] mt-2 leading-relaxed">
-                      All mortal verses dissolved. The slate has returned to primordial void.
+                    <p className="font-chivo text-xs text-[#888890] leading-relaxed">
+                      All mortal logs and sins purged. The slate has dissolved into the infinite void.
                     </p>
-                  </div>
-
-                  <div className="pt-2">
-                    <button
-                      type="button"
-                      onClick={handleResurrectReboot}
-                      className="w-full border border-[#D4AF37] bg-[#D4AF37] text-[#050508] hover:bg-white font-bodoni text-xs font-bold uppercase py-3 transition-all cursor-pointer shadow-[0_0_15px_rgba(212,175,55,0.4)] active:scale-95"
-                    >
-                      ✦ [ RESURRECT // REBIRTH ] ✦
-                    </button>
-                  </div>
-                </div>
-              ) : isWhite ? (
-                /* ⚪ PRTS_WHITE 罗德岛协议重载 */
-                <div className="border-2 border-[#191C1E] p-6 bg-white shadow-[8px_8px_0px_0px_#191C1E] max-w-xs space-y-4 crop-marks">
-                  <div className="flex items-center justify-between border-b border-[#D8DADC] pb-2">
-                    <span className="bg-[#BA1A1A] text-white font-mono-code text-[9px] px-1.5 py-0.5 font-bold uppercase">
-                      CRITICAL_REBOOT
-                    </span>
-                    <span className="font-mono-code text-[9px] text-[#76777B]">PRTS_SYS_001</span>
-                  </div>
-                  <div>
-                    <h2 className="font-space text-2xl font-bold text-[#191C1E] uppercase tracking-wide leading-tight">
+                  </>
+                ) : isWhite ? (
+                  <>
+                    <div className="w-16 h-16 mx-auto border-2 border-[#191C1E] bg-white flex items-center justify-center text-[#BA1A1A] shadow-[4px_4px_0px_0px_#191C1E]">
+                      <span className="material-symbols-outlined text-3xl">restart_alt</span>
+                    </div>
+                    <h2 className="font-space text-3xl font-bold text-[#191C1E] uppercase tracking-wide leading-tight">
                       SYSTEM PURGED
                     </h2>
-                    <p className="font-space text-xs text-[#46464B] mt-2 leading-relaxed">
-                      All tactical buffers flushed. Terminal offline awaiting manual operator reboot sequence.
+                    <p className="font-space text-xs text-[#46464B] leading-relaxed">
+                      All tactical buffers flushed. Terminal offline awaiting operator reboot.
                     </p>
-                  </div>
-
-                  <div className="pt-2">
-                    <button
-                      type="button"
-                      onClick={handleResurrectReboot}
-                      className="w-full bg-[#191C1E] text-white hover:bg-[#006875] font-mono-code text-xs font-bold uppercase py-3 transition-all cursor-pointer shadow-[4px_4px_0px_0px_#BA1A1A] active:translate-x-0.5 active:translate-y-0.5 btn-chamfer"
-                    >
-                      ▶ [ INITIALIZE REBOOT SEQUENCE ⟳ ]
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                /* 🌑 SYS_REBEL 强尼·银手 2023 赛博重开 */
-                <div className="border-4 border-[#FF5357] p-6 bg-[#0E0E11] shadow-[8px_8px_0px_0px_#FF5357] max-w-xs space-y-4 pulse-glow-red">
-                  <div>
-                    <div className="font-mono-code text-[10px] text-[#FFB3AF] tracking-widest uppercase mb-1">
-                      // SILVERHAND_RESONANCE [2023_FLASHBACK]
-                    </div>
-                    <h2 className="font-anton text-3xl text-[#FF5357] tracking-wider uppercase leading-tight">
+                  </>
+                ) : (
+                  <>
+                    <h2 className="font-anton text-4xl sm:text-5xl text-[#FF5357] tracking-wider uppercase leading-none">
                       PARTY LIKE IT'S 2023
                     </h2>
-                    <p className="font-mono-code text-xs text-[#E4E1E7] mt-2 leading-relaxed">
+                    <p className="font-mono-code text-xs text-[#FFB3AF] tracking-wider mt-2">
                       [ WAKE THE FUCK UP, SAMURAI · WE HAVE A CITY TO BURN ]
                     </p>
-                  </div>
+                  </>
+                )}
+              </div>
 
-                  <div className="pt-2">
-                    <button
-                      type="button"
-                      onClick={handleResurrectReboot}
-                      className="w-full border-2 border-[#FFB3AF] bg-[#FF5357] text-[#0E0E11] hover:bg-[#FFB3AF] font-anton text-lg tracking-widest uppercase py-3 transition-all cursor-pointer shadow-[4px_4px_0px_0px_#FFFFFF] active:translate-x-0.5 active:translate-y-0.5"
-                    >
-                      ⚡ [ WAKE UP // RESURRECT ] ⚡
-                    </button>
-                  </div>
+              {/* 底部唤醒提示按钮 */}
+              <div className="pt-4 w-full max-w-xs">
+                <div className={`font-mono-code text-xs font-bold uppercase tracking-widest py-3 text-center transition-all ${
+                  isGothic
+                    ? 'border border-[#D4AF37] bg-[#D4AF37] text-[#050508] shadow-[0_0_20px_rgba(212,175,55,0.5)]'
+                    : isWhite
+                    ? 'border-2 border-[#191C1E] bg-[#191C1E] text-white shadow-[4px_4px_0px_0px_#BA1A1A] btn-chamfer'
+                    : 'border-2 border-[#FFB3AF] bg-[#FF5357] text-[#0E0E11] shadow-[4px_4px_0px_0px_#FFFFFF] pulse-glow-red'
+                }`}>
+                  [ TAP TO WAKE UP // REBOOT ⟳ ]
                 </div>
-              )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -3546,6 +3495,46 @@ export const App: React.FC = () => {
                         GOTHIC
                       </button>
                     </div>
+                  </div>
+
+                  {/* 🌟 声音设置 (SFX Audio Settings in Drawer) */}
+                  <div className={`p-2.5 border flex justify-between items-center ${
+                    isGothic
+                      ? 'bg-[#09090D] border-[#E8DCC4]/30'
+                      : isWhite
+                      ? 'bg-white border-[#191C1E] shadow-[3px_3px_0px_0px_#191C1E]'
+                      : 'bg-[#1F1F23] border-[#343438] shadow-[3px_3px_0px_0px_#FFB3AF]'
+                  }`}>
+                    <div className="flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[16px]">
+                        {soundActive ? 'volume_up' : 'volume_off'}
+                      </span>
+                      <span className={`text-[10px] font-mono-code font-bold uppercase ${
+                        isGothic ? 'text-[#E8DCC4]' : isWhite ? 'text-[#191C1E]' : 'text-[#E9BCB9]'
+                      }`}>
+                        SOUND_SFX
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = toggleSound();
+                        setSoundActive(next);
+                        if (next) playClickSound();
+                      }}
+                      className={`font-mono-code text-[9px] px-2 py-0.5 font-bold uppercase transition-all cursor-pointer border ${
+                        soundActive
+                          ? isGothic
+                            ? 'bg-[#D4AF37] text-[#050508] border-[#D4AF37]'
+                            : isWhite
+                            ? 'bg-[#006875] text-white border-[#006875]'
+                            : 'bg-[#FF5357] text-white border-[#FF5357]'
+                          : 'bg-transparent border-[#76777B] text-[#76777B]'
+                      }`}
+                    >
+                      {soundActive ? '[ ENABLED ]' : '[ MUTED ]'}
+                    </button>
                   </div>
 
                   {/* 快捷板块导航 */}

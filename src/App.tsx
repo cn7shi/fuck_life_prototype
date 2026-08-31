@@ -285,6 +285,22 @@ export const App: React.FC = () => {
   const [copiedSnippetId, setCopiedSnippetId] = useState<string | null>(null);
   const vaultFileInputRef = useRef<HTMLInputElement>(null);
 
+  // 编辑 Vault 状态 (支持双击卡片与点击图标即时编辑)
+  const [editingVaultId, setEditingVaultId] = useState<string | null>(null);
+  const [editVaultDraft, setEditVaultDraft] = useState<{
+    type: VaultType;
+    title: string;
+    content: string;
+    sourceOrAuthor: string;
+    tags: string;
+  }>({
+    type: 'link',
+    title: '',
+    content: '',
+    sourceOrAuthor: '',
+    tags: '',
+  });
+
   const [vaultItems, setVaultItems] = useState<VaultItem[]>(() =>
     getInitialStorage('fk_vault_items', DEFAULT_VAULT_ITEMS)
   );
@@ -600,6 +616,65 @@ export const App: React.FC = () => {
     if (e) e.stopPropagation();
     playKillSound();
     setVaultItems((prev) => prev.filter((v) => v.id !== id));
+    if (editingVaultId === id) setEditingVaultId(null);
+  };
+
+  const handleStartEditVault = (item: VaultItem, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    playClickSound();
+    setEditingVaultId(item.id);
+    setEditVaultDraft({
+      type: item.type,
+      title: item.title,
+      content: item.content,
+      sourceOrAuthor: item.sourceOrAuthor || '',
+      tags: item.tags.join(', '),
+    });
+  };
+
+  const handleSaveEditVault = (id: string, e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editVaultDraft.title.trim() && !editVaultDraft.content.trim()) return;
+
+    playClickSound();
+    const parsedTags = editVaultDraft.tags
+      .split(/[,，\s]+/)
+      .map((t) => t.trim().toUpperCase())
+      .filter((t) => t.length > 0);
+
+    let autoSource = editVaultDraft.sourceOrAuthor.trim();
+    if (editVaultDraft.type === 'link' && !autoSource && editVaultDraft.content.trim()) {
+      try {
+        const url = new URL(
+          editVaultDraft.content.startsWith('http') ? editVaultDraft.content : `https://${editVaultDraft.content}`
+        );
+        autoSource = url.hostname.replace('www.', '');
+      } catch {
+        autoSource = 'web.link';
+      }
+    }
+
+    setVaultItems((prev) =>
+      prev.map((v) =>
+        v.id === id
+          ? {
+              ...v,
+              type: editVaultDraft.type,
+              title: editVaultDraft.title.trim().toUpperCase() || (editVaultDraft.type === 'link' ? autoSource.toUpperCase() : 'UNTITLED_CLIP'),
+              content: editVaultDraft.content.trim(),
+              sourceOrAuthor: autoSource || (editVaultDraft.type === 'quote' ? 'ANONYMOUS' : undefined),
+              tags: parsedTags.length > 0 ? parsedTags : [editVaultDraft.type.toUpperCase()],
+            }
+          : v
+      )
+    );
+
+    setEditingVaultId(null);
+  };
+
+  const handleCancelEditVault = () => {
+    playClickSound();
+    setEditingVaultId(null);
   };
 
   const handleCopySnippet = (id: string, text: string, e?: React.MouseEvent) => {
@@ -2944,208 +3019,370 @@ export const App: React.FC = () => {
                       NO CLIPS FOUND IN THIS CATEGORY.
                     </div>
                   ) : (
-                    filteredVaultItems.map((item) => (
-                      <div key={item.id} className="relative overflow-hidden group">
-                        {/* 左滑删除 */}
-                        <div className={`absolute inset-y-0 right-0 w-20 flex items-center justify-center text-white z-0 ${
-                          isGothic ? 'bg-[#960018]' : isWhite ? 'bg-[#BA1A1A]' : 'bg-[#FF5357]'
-                        }`}>
-                          <button
-                            type="button"
-                            onClick={(e) => handleDeleteVaultItem(item.id, e)}
-                            className="w-full h-full flex flex-col items-center justify-center font-mono-code text-[10px] font-bold uppercase hover:bg-black/30 transition-colors cursor-pointer"
+                    filteredVaultItems.map((item) => {
+                      const isEditing = editingVaultId === item.id;
+
+                      return (
+                        <div key={item.id} className="relative overflow-hidden group">
+                          {/* 左滑删除 */}
+                          <div className={`absolute inset-y-0 right-0 w-20 flex items-center justify-center text-white z-0 ${
+                            isGothic ? 'bg-[#960018]' : isWhite ? 'bg-[#BA1A1A]' : 'bg-[#FF5357]'
+                          }`}>
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteVaultItem(item.id, e)}
+                              className="w-full h-full flex flex-col items-center justify-center font-mono-code text-[10px] font-bold uppercase hover:bg-black/30 transition-colors cursor-pointer"
+                            >
+                              <span className="material-symbols-outlined text-[20px]">delete_forever</span>
+                              <span>PURGE</span>
+                            </button>
+                          </div>
+
+                          <motion.article
+                            drag={isEditing ? false : "x"}
+                            dragConstraints={{ left: -75, right: 0 }}
+                            dragElastic={0.05}
+                            animate={{ x: swipedVaultId === item.id ? -75 : 0 }}
+                            transition={{ type: 'spring', damping: 28, stiffness: 450 }}
+                            onDragEnd={(_, info) => {
+                              if (info.offset.x < -25 || info.velocity.x < -150) {
+                                setSwipedVaultId(item.id);
+                              } else if (info.offset.x > 15 || info.velocity.x > 150) {
+                                setSwipedVaultId(null);
+                              }
+                            }}
+                            onDoubleClick={() => handleStartEditVault(item)}
+                            onClick={() => {
+                              if (swipedVaultId === item.id) setSwipedVaultId(null);
+                            }}
+                            className={`relative z-10 p-3.5 select-none ${isEditing ? '' : 'cursor-grab active:cursor-grabbing'} border ${
+                              isGothic
+                                ? 'border-[#E8DCC4]/40 bg-[#0A0A0F] shadow-[0_0_12px_rgba(232,220,196,0.1)]'
+                                : isWhite
+                                ? 'border-2 border-[#191C1E] bg-white shadow-[4px_4px_0px_0px_#191C1E] crop-marks'
+                                : 'border-2 border-[#FFB3AF] bg-[#131317] shadow-[5px_5px_0px_0px_#FFB3AF]'
+                            }`}
                           >
-                            <span className="material-symbols-outlined text-[20px]">delete_forever</span>
-                            <span>PURGE</span>
-                          </button>
-                        </div>
+                            {isEditing ? (
+                              /* ==================== 正在编辑 Vault 状态 ==================== */
+                              <form onSubmit={(e) => handleSaveEditVault(item.id, e)} className="space-y-2.5">
+                                <div className="flex justify-between items-center pb-1 border-b border-dashed border-[#5F3E3D]/50">
+                                  <span className={`font-mono-code text-[10px] font-bold uppercase ${
+                                    isGothic ? 'text-[#E8DCC4]' : isWhite ? 'text-[#191C1E]' : 'text-[#FFB3AF]'
+                                  }`}>
+                                    // EDITING_CLIP [0x{item.id.slice(-4)}]
+                                  </span>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={handleCancelEditVault}
+                                      className={`px-2 py-0.5 font-mono-code text-[9px] uppercase border cursor-pointer ${
+                                        isGothic
+                                          ? 'border-[#E8DCC4]/30 text-[#888890] hover:text-[#E8DCC4]'
+                                          : isWhite
+                                          ? 'border-[#D8DADC] text-[#76777B] hover:text-[#191C1E]'
+                                          : 'border-[#5F3E3D] text-[#8E8E93] hover:text-[#FFB3AF]'
+                                      }`}
+                                    >
+                                      CANCEL
+                                    </button>
+                                    <button
+                                      type="submit"
+                                      className={`px-2.5 py-0.5 font-mono-code text-[9px] font-bold uppercase border cursor-pointer ${
+                                        isGothic
+                                          ? 'bg-[#E8DCC4] text-[#050508] border-[#E8DCC4]'
+                                          : isWhite
+                                          ? 'bg-[#191C1E] text-white border-[#191C1E]'
+                                          : 'bg-[#FF5357] text-[#131317] border-[#FF5357]'
+                                      }`}
+                                    >
+                                      SAVE ✓
+                                    </button>
+                                  </div>
+                                </div>
 
-                        <motion.article
-                          drag="x"
-                          dragConstraints={{ left: -75, right: 0 }}
-                          dragElastic={0.05}
-                          animate={{ x: swipedVaultId === item.id ? -75 : 0 }}
-                          transition={{ type: 'spring', damping: 28, stiffness: 450 }}
-                          onDragEnd={(_, info) => {
-                            if (info.offset.x < -25 || info.velocity.x < -150) {
-                              setSwipedVaultId(item.id);
-                            } else if (info.offset.x > 15 || info.velocity.x > 150) {
-                              setSwipedVaultId(null);
-                            }
-                          }}
-                          onClick={() => {
-                            if (swipedVaultId === item.id) setSwipedVaultId(null);
-                          }}
-                          className={`relative z-10 p-3.5 select-none cursor-grab active:cursor-grabbing border ${
-                            isGothic
-                              ? 'border-[#E8DCC4]/40 bg-[#0A0A0F] shadow-[0_0_12px_rgba(232,220,196,0.1)]'
-                              : isWhite
-                              ? 'border-2 border-[#191C1E] bg-white shadow-[4px_4px_0px_0px_#191C1E] crop-marks'
-                              : 'border-2 border-[#FFB3AF] bg-[#131317] shadow-[5px_5px_0px_0px_#FFB3AF]'
-                          }`}
-                        >
-                          {/* 卡片头部：类型 Icon + 标题 + 时间 */}
-                          <div className={`flex justify-between items-center pb-1.5 mb-2 border-b ${
-                            isGothic ? 'border-[#E8DCC4]/15' : isWhite ? 'border-[#ECEEF0]' : 'border-dotted border-[#5F3E3D]'
-                          }`}>
-                            <div className="flex items-center gap-1.5">
-                              <span className={`font-mono-code text-[9px] px-1.5 py-0.5 font-bold uppercase flex items-center gap-1 ${
-                                item.type === 'link'
-                                  ? 'bg-[#006875] text-white'
-                                  : item.type === 'quote'
-                                  ? isGothic ? 'bg-[#D4AF37] text-[#050508]' : isWhite ? 'bg-[#BA1A1A] text-white' : 'bg-[#FF5357] text-[#131317]'
-                                  : item.type === 'snippet'
-                                  ? 'bg-[#191C1E] text-[#00FF66] border border-[#00FF66]/40'
-                                  : item.type === 'media'
-                                  ? 'bg-[#5C000B] text-white'
-                                  : isGothic ? 'bg-[#3A2E1A] text-[#E8DCC4] border border-[#D4AF37]/40' : isWhite ? 'bg-[#46464B] text-white' : 'bg-[#2A2A35] text-[#FFB3AF] border border-[#FFB3AF]/30'
-                              }`}>
-                                <span className="material-symbols-outlined text-[11px]">
-                                  {item.type === 'link' ? 'link' : item.type === 'quote' ? 'format_quote' : item.type === 'snippet' ? 'terminal' : item.type === 'media' ? 'image' : 'sticky_note_2'}
-                                </span>
-                                {item.type}
-                              </span>
+                                {/* 类型切换 */}
+                                <div className="grid grid-cols-5 gap-1">
+                                  {[
+                                    { id: 'link', label: 'LINK' },
+                                    { id: 'quote', label: 'QUOTE' },
+                                    { id: 'snippet', label: 'CODE' },
+                                    { id: 'media', label: 'MEDIA' },
+                                    { id: 'other', label: 'OTHER' },
+                                  ].map((t) => (
+                                    <button
+                                      key={t.id}
+                                      type="button"
+                                      onClick={() => {
+                                        playClickSound();
+                                        setEditVaultDraft({ ...editVaultDraft, type: t.id as VaultType });
+                                      }}
+                                      className={`py-1 font-mono-code text-[8px] font-bold uppercase border cursor-pointer ${
+                                        editVaultDraft.type === t.id
+                                          ? isGothic
+                                            ? 'bg-[#E8DCC4] text-[#050508] border-[#E8DCC4]'
+                                            : isWhite
+                                            ? 'bg-[#191C1E] text-white border-[#191C1E]'
+                                            : 'bg-[#FF5357] text-[#131317] border-[#FF5357]'
+                                          : isGothic
+                                          ? 'bg-[#050508] text-[#888890] border-[#E8DCC4]/20'
+                                          : isWhite
+                                          ? 'bg-[#F8F9FB] text-[#76777B] border-[#D8DADC]'
+                                          : 'bg-[#131317] text-[#8E8E93] border-[#343438]'
+                                      }`}
+                                    >
+                                      {t.label}
+                                    </button>
+                                  ))}
+                                </div>
 
-                              {item.sourceOrAuthor && (
-                                <span className={`font-mono-code text-[10px] ${
-                                  isGothic ? 'text-[#D4AF37]' : isWhite ? 'text-[#006875]' : 'text-[#FFB3AF]'
-                                }`}>
-                                  {item.type === 'link' ? item.sourceOrAuthor : item.type === 'quote' ? `— ${item.sourceOrAuthor}` : `[${item.sourceOrAuthor}]`}
-                                </span>
-                              )}
-                            </div>
-
-                            <span className={`font-mono-code text-[9px] ${
-                              isGothic ? 'text-[#888890]' : isWhite ? 'text-[#76777B]' : 'text-[#8E8E93]'
-                            }`}>
-                              {item.time}
-                            </span>
-                          </div>
-
-                          {/* 标题 */}
-                          <h3 className={`text-base font-bold uppercase mb-1.5 ${
-                            isGothic ? 'font-bodoni text-[#F5F5FA]' : isWhite ? 'font-space text-[#191C1E]' : 'font-anton text-[#FFB3AF] tracking-wide'
-                          }`}>
-                            {item.title}
-                          </h3>
-
-                          {/* 核心内容渲染：针对不同类型做特殊设计 */}
-                          {item.type === 'link' ? (
-                            /* 🔗 外链类型：高亮 URL 与一键跳转按钮 */
-                            <div className={`p-2.5 my-2 border flex justify-between items-center gap-2 ${
-                              isGothic
-                                ? 'bg-[#050508] border-[#E8DCC4]/20'
-                                : isWhite
-                                ? 'bg-[#F8F9FB] border-[#D8DADC]'
-                                : 'bg-[#1F1F23] border-[#343438]'
-                            }`}>
-                              <span className="font-mono-code text-xs truncate select-all text-[#64B5F6]">
-                                {item.content}
-                              </span>
-                              <a
-                                href={item.content.startsWith('http') ? item.content : `https://${item.content}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  playClickSound();
-                                }}
-                                className={`px-2 py-1 font-mono-code text-[10px] font-bold uppercase shrink-0 transition-all flex items-center gap-1 border ${
-                                  isGothic
-                                    ? 'bg-[#E8DCC4] text-[#050508] border-[#E8DCC4] hover:bg-white'
-                                    : isWhite
-                                    ? 'bg-[#191C1E] text-white border-[#191C1E] hover:bg-[#006875]'
-                                    : 'bg-[#FF5357] text-[#131317] border-[#FF5357] hover:bg-[#FFB3AF]'
-                                }`}
-                              >
-                                <span>OPEN</span>
-                                <span className="material-symbols-outlined text-[12px]">open_in_new</span>
-                              </a>
-                            </div>
-                          ) : item.type === 'quote' ? (
-                            /* 💬 名言/金句类型：大气排版引号 */
-                            <blockquote className={`my-2 p-2.5 border-l-4 italic leading-relaxed text-xs sm:text-sm ${
-                              isGothic
-                                ? 'border-[#D4AF37] bg-[#050508] text-[#E8DCC4] font-bodoni'
-                                : isWhite
-                                ? 'border-[#191C1E] bg-[#F8F9FB] text-[#191C1E] font-space'
-                                : 'border-[#FF5357] bg-[#1F1F23] text-[#E4E1E7] font-chivo'
-                            }`}>
-                              “{item.content}”
-                            </blockquote>
-                          ) : item.type === 'snippet' ? (
-                            /* ⚡ 代码/命令类型：暗黑终端风格代码框 */
-                            <div className="my-2 relative group/snippet">
-                              <pre className="p-2.5 bg-[#050508] border border-[#343438] font-mono-code text-[11px] text-[#00FF66] overflow-x-auto select-all leading-snug">
-                                <code>{item.content}</code>
-                              </pre>
-                              <button
-                                type="button"
-                                onClick={(e) => handleCopySnippet(item.id, item.content, e)}
-                                className="absolute top-1.5 right-1.5 px-1.5 py-0.5 font-mono-code text-[8px] font-bold uppercase bg-[#191C1E] text-white border border-[#343438] hover:border-[#00FF66] hover:text-[#00FF66] transition-colors cursor-pointer"
-                              >
-                                {copiedSnippetId === item.id ? 'COPIED ✓' : 'COPY'}
-                              </button>
-                            </div>
-                          ) : item.type === 'media' ? (
-                            /* 🖼️ 图片/视觉类型 */
-                            <div className="my-2 space-y-1.5">
-                              {item.imageUrl && (
-                                <img
-                                  src={item.imageUrl}
-                                  alt={item.title}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedPreviewImage(item.imageUrl || null);
-                                  }}
-                                  className="w-full max-h-48 object-cover border border-[#E8DCC4]/30 cursor-pointer"
+                                {/* 标题编辑 */}
+                                <input
+                                  type="text"
+                                  value={editVaultDraft.title}
+                                  onChange={(e) => setEditVaultDraft({ ...editVaultDraft, title: e.target.value })}
+                                  placeholder="TITLE..."
+                                  className={`w-full p-1.5 text-xs font-mono-code focus:outline-none border ${
+                                    isGothic
+                                      ? 'bg-[#050508] border-[#E8DCC4]/20 text-[#F5F5FA] focus:border-[#E8DCC4]'
+                                      : isWhite
+                                      ? 'bg-[#F8F9FB] border-[#D8DADC] text-[#191C1E] focus:border-[#191C1E]'
+                                      : 'bg-[#131317] border-[#5F3E3D] text-[#E4E1E7] focus:border-[#FFB3AF]'
+                                  }`}
                                 />
-                              )}
-                              {item.content && (
-                                <p className={`text-xs leading-relaxed ${
-                                  isGothic ? 'font-chivo text-[#888890]' : isWhite ? 'text-[#46464B]' : 'text-[#E4E1E7]'
-                                }`}>
-                                  {item.content}
-                                </p>
-                              )}
-                            </div>
-                          ) : (
-                            /* 📌 杂项 / 自由文本 / 备忘 (OTHER) */
-                            <div className={`my-2 p-2.5 border-dashed border ${
-                              isGothic
-                                ? 'border-[#E8DCC4]/25 bg-[#050508] text-[#E8DCC4]'
-                                : isWhite
-                                ? 'border-[#D8DADC] bg-[#F8F9FB] text-[#191C1E]'
-                                : 'border-[#5F3E3D] bg-[#18181D] text-[#E4E1E7]'
-                            }`}>
-                              <p className={`text-xs leading-relaxed whitespace-pre-wrap ${
-                                isGothic ? 'font-chivo' : 'font-space'
-                              }`}>
-                                {item.content}
-                              </p>
-                            </div>
-                          )}
 
-                          {/* 底部标签列表 */}
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {item.tags.map((tag, idx) => (
-                              <span
-                                key={idx}
-                                className={`px-1.5 py-0.5 font-mono-code text-[9px] border ${
-                                  isGothic
-                                    ? 'border-[#E8DCC4]/20 bg-[#050508] text-[#E8DCC4]'
-                                    : isWhite
-                                    ? 'border-[#D8DADC] bg-[#F8F9FB] text-[#76777B]'
-                                    : 'border-[#5F3E3D] bg-[#18181D] text-[#E9BCB9]'
-                                }`}
-                              >
-                                #{tag}
-                              </span>
-                            ))}
-                          </div>
-                        </motion.article>
-                      </div>
-                    ))
+                                {/* 内容编辑 */}
+                                <textarea
+                                  value={editVaultDraft.content}
+                                  onChange={(e) => setEditVaultDraft({ ...editVaultDraft, content: e.target.value })}
+                                  rows={editVaultDraft.type === 'snippet' ? 4 : 3}
+                                  className={`w-full p-1.5 text-xs focus:outline-none resize-none border ${
+                                    editVaultDraft.type === 'snippet' ? 'font-mono-code text-[#00FF66] bg-[#050508]' : isGothic ? 'font-chivo bg-[#050508]' : isWhite ? 'font-space bg-[#F8F9FB]' : 'font-space bg-[#131317]'
+                                  } ${
+                                    isGothic
+                                      ? 'border-[#E8DCC4]/20 text-[#F5F5FA] focus:border-[#E8DCC4]'
+                                      : isWhite
+                                      ? 'border-[#D8DADC] text-[#191C1E] focus:border-[#191C1E]'
+                                      : 'border-[#5F3E3D] text-[#E4E1E7] focus:border-[#FFB3AF]'
+                                  }`}
+                                />
+
+                                {/* 来源与标签 */}
+                                <div className="grid grid-cols-2 gap-2">
+                                  <input
+                                    type="text"
+                                    value={editVaultDraft.sourceOrAuthor}
+                                    onChange={(e) => setEditVaultDraft({ ...editVaultDraft, sourceOrAuthor: e.target.value })}
+                                    placeholder="SOURCE / AUTHOR..."
+                                    className={`w-full p-1 text-xs font-mono-code focus:outline-none border ${
+                                      isGothic
+                                        ? 'bg-[#050508] border-[#E8DCC4]/20 text-[#F5F5FA] focus:border-[#E8DCC4]'
+                                        : isWhite
+                                        ? 'bg-[#F8F9FB] border-[#D8DADC] text-[#191C1E] focus:border-[#191C1E]'
+                                        : 'bg-[#131317] border-[#5F3E3D] text-[#E4E1E7] focus:border-[#FFB3AF]'
+                                    }`}
+                                  />
+                                  <input
+                                    type="text"
+                                    value={editVaultDraft.tags}
+                                    onChange={(e) => setEditVaultDraft({ ...editVaultDraft, tags: e.target.value })}
+                                    placeholder="TAGS (e.g. DEV, UI)..."
+                                    className={`w-full p-1 text-xs font-mono-code focus:outline-none border ${
+                                      isGothic
+                                        ? 'bg-[#050508] border-[#E8DCC4]/20 text-[#F5F5FA] focus:border-[#E8DCC4]'
+                                        : isWhite
+                                        ? 'bg-[#F8F9FB] border-[#D8DADC] text-[#191C1E] focus:border-[#191C1E]'
+                                        : 'bg-[#131317] border-[#5F3E3D] text-[#E4E1E7] focus:border-[#FFB3AF]'
+                                    }`}
+                                  />
+                                </div>
+                              </form>
+                            ) : (
+                              /* ==================== 正常展示 Vault 卡片 ==================== */
+                              <>
+                                {/* 卡片头部：类型 Icon + 标题 + 时间 + 编辑按钮 */}
+                                <div className={`flex justify-between items-center pb-1.5 mb-2 border-b ${
+                                  isGothic ? 'border-[#E8DCC4]/15' : isWhite ? 'border-[#ECEEF0]' : 'border-dotted border-[#5F3E3D]'
+                                }`}>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className={`font-mono-code text-[9px] px-1.5 py-0.5 font-bold uppercase flex items-center gap-1 ${
+                                      item.type === 'link'
+                                        ? 'bg-[#006875] text-white'
+                                        : item.type === 'quote'
+                                        ? isGothic ? 'bg-[#D4AF37] text-[#050508]' : isWhite ? 'bg-[#BA1A1A] text-white' : 'bg-[#FF5357] text-[#131317]'
+                                        : item.type === 'snippet'
+                                        ? 'bg-[#191C1E] text-[#00FF66] border border-[#00FF66]/40'
+                                        : item.type === 'media'
+                                        ? 'bg-[#5C000B] text-white'
+                                        : isGothic ? 'bg-[#3A2E1A] text-[#E8DCC4] border border-[#D4AF37]/40' : isWhite ? 'bg-[#46464B] text-white' : 'bg-[#2A2A35] text-[#FFB3AF] border border-[#FFB3AF]/30'
+                                    }`}>
+                                      <span className="material-symbols-outlined text-[11px]">
+                                        {item.type === 'link' ? 'link' : item.type === 'quote' ? 'format_quote' : item.type === 'snippet' ? 'terminal' : item.type === 'media' ? 'image' : 'sticky_note_2'}
+                                      </span>
+                                      {item.type}
+                                    </span>
+
+                                    {item.sourceOrAuthor && (
+                                      <span className={`font-mono-code text-[10px] ${
+                                        isGothic ? 'text-[#D4AF37]' : isWhite ? 'text-[#006875]' : 'text-[#FFB3AF]'
+                                      }`}>
+                                        {item.type === 'link' ? item.sourceOrAuthor : item.type === 'quote' ? `— ${item.sourceOrAuthor}` : `[${item.sourceOrAuthor}]`}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => handleStartEditVault(item, e)}
+                                      title="Double-click card or tap to edit"
+                                      className={`font-mono-code text-[9px] px-1.5 py-0.5 border flex items-center gap-0.5 cursor-pointer transition-colors ${
+                                        isGothic
+                                          ? 'border-[#E8DCC4]/30 text-[#E8DCC4] hover:bg-[#E8DCC4] hover:text-[#050508]'
+                                          : isWhite
+                                          ? 'border-[#D8DADC] text-[#76777B] hover:border-[#191C1E] hover:text-[#191C1E]'
+                                          : 'border-[#5F3E3D] text-[#E9BCB9] hover:border-[#FFB3AF] hover:text-[#FFB3AF]'
+                                      }`}
+                                    >
+                                      <span className="material-symbols-outlined text-[11px]">edit</span>
+                                      <span>EDIT</span>
+                                    </button>
+
+                                    <span className={`font-mono-code text-[9px] ${
+                                      isGothic ? 'text-[#888890]' : isWhite ? 'text-[#76777B]' : 'text-[#8E8E93]'
+                                    }`}>
+                                      {item.time}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* 标题 */}
+                                <h3 className={`text-base font-bold uppercase mb-1.5 ${
+                                  isGothic ? 'font-bodoni text-[#F5F5FA]' : isWhite ? 'font-space text-[#191C1E]' : 'font-anton text-[#FFB3AF] tracking-wide'
+                                }`}>
+                                  {item.title}
+                                </h3>
+
+                                {/* 核心内容渲染：针对不同类型做特殊设计 */}
+                                {item.type === 'link' ? (
+                                  /* 🔗 外链类型：高亮 URL 与一键跳转按钮 */
+                                  <div className={`p-2.5 my-2 border flex justify-between items-center gap-2 ${
+                                    isGothic
+                                      ? 'bg-[#050508] border-[#E8DCC4]/20'
+                                      : isWhite
+                                      ? 'bg-[#F8F9FB] border-[#D8DADC]'
+                                      : 'bg-[#1F1F23] border-[#343438]'
+                                  }`}>
+                                    <span className="font-mono-code text-xs truncate select-all text-[#64B5F6]">
+                                      {item.content}
+                                    </span>
+                                    <a
+                                      href={item.content.startsWith('http') ? item.content : `https://${item.content}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        playClickSound();
+                                      }}
+                                      className={`px-2 py-1 font-mono-code text-[10px] font-bold uppercase shrink-0 transition-all flex items-center gap-1 border ${
+                                        isGothic
+                                          ? 'bg-[#E8DCC4] text-[#050508] border-[#E8DCC4] hover:bg-white'
+                                          : isWhite
+                                          ? 'bg-[#191C1E] text-white border-[#191C1E] hover:bg-[#006875]'
+                                          : 'bg-[#FF5357] text-[#131317] border-[#FF5357] hover:bg-[#FFB3AF]'
+                                      }`}
+                                    >
+                                      <span>OPEN</span>
+                                      <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+                                    </a>
+                                  </div>
+                                ) : item.type === 'quote' ? (
+                                  /* 💬 名言/金句类型：大气排版引号 */
+                                  <blockquote className={`my-2 p-2.5 border-l-4 italic leading-relaxed text-xs sm:text-sm ${
+                                    isGothic
+                                      ? 'border-[#D4AF37] bg-[#050508] text-[#E8DCC4] font-bodoni'
+                                      : isWhite
+                                      ? 'border-[#191C1E] bg-[#F8F9FB] text-[#191C1E] font-space'
+                                      : 'border-[#FF5357] bg-[#1F1F23] text-[#E4E1E7] font-chivo'
+                                  }`}>
+                                    “{item.content}”
+                                  </blockquote>
+                                ) : item.type === 'snippet' ? (
+                                  /* ⚡ 代码/命令类型：暗黑终端风格代码框 */
+                                  <div className="my-2 relative group/snippet">
+                                    <pre className="p-2.5 bg-[#050508] border border-[#343438] font-mono-code text-[11px] text-[#00FF66] overflow-x-auto select-all leading-snug">
+                                      <code>{item.content}</code>
+                                    </pre>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => handleCopySnippet(item.id, item.content, e)}
+                                      className="absolute top-1.5 right-1.5 px-1.5 py-0.5 font-mono-code text-[8px] font-bold uppercase bg-[#191C1E] text-white border border-[#343438] hover:border-[#00FF66] hover:text-[#00FF66] transition-colors cursor-pointer"
+                                    >
+                                      {copiedSnippetId === item.id ? 'COPIED ✓' : 'COPY'}
+                                    </button>
+                                  </div>
+                                ) : item.type === 'media' ? (
+                                  /* 🖼️ 图片/视觉类型 */
+                                  <div className="my-2 space-y-1.5">
+                                    {item.imageUrl && (
+                                      <img
+                                        src={item.imageUrl}
+                                        alt={item.title}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedPreviewImage(item.imageUrl || null);
+                                        }}
+                                        className="w-full max-h-48 object-cover border border-[#E8DCC4]/30 cursor-pointer"
+                                      />
+                                    )}
+                                    {item.content && (
+                                      <p className={`text-xs leading-relaxed ${
+                                        isGothic ? 'font-chivo text-[#888890]' : isWhite ? 'text-[#46464B]' : 'text-[#E4E1E7]'
+                                      }`}>
+                                        {item.content}
+                                      </p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  /* 📌 杂项 / 自由文本 / 备忘 (OTHER) */
+                                  <div className={`my-2 p-2.5 border-dashed border ${
+                                    isGothic
+                                      ? 'border-[#E8DCC4]/25 bg-[#050508] text-[#E8DCC4]'
+                                      : isWhite
+                                      ? 'border-[#D8DADC] bg-[#F8F9FB] text-[#191C1E]'
+                                      : 'border-[#5F3E3D] bg-[#18181D] text-[#E4E1E7]'
+                                  }`}>
+                                    <p className={`text-xs leading-relaxed whitespace-pre-wrap ${
+                                      isGothic ? 'font-chivo' : 'font-space'
+                                    }`}>
+                                      {item.content}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* 底部标签列表 */}
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {item.tags.map((tag, idx) => (
+                                    <span
+                                      key={idx}
+                                      className={`px-1.5 py-0.5 font-mono-code text-[9px] border ${
+                                        isGothic
+                                          ? 'border-[#E8DCC4]/20 bg-[#050508] text-[#E8DCC4]'
+                                          : isWhite
+                                          ? 'border-[#D8DADC] bg-[#F8F9FB] text-[#76777B]'
+                                          : 'border-[#5F3E3D] bg-[#18181D] text-[#E9BCB9]'
+                                      }`}
+                                    >
+                                      #{tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              </>
+                            )}
+                          </motion.article>
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </div>

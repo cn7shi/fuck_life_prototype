@@ -1,4 +1,4 @@
-﻿// High-grade ASMR & Mechanical UI Sound Engine using Web Audio API
+﻿// True Physical & Acoustic Sample Modeling Engine (真实物理录音级微声采样引擎)
 
 let audioCtx: AudioContext | null = null;
 let soundEnabled = true;
@@ -31,7 +31,7 @@ export function toggleSound(enabled?: boolean): boolean {
   return soundEnabled;
 }
 
-// 1. 机械轴体微动清脆声 (Tactical Mechanical Click / Shutter Click)
+// 1. 真实客制化机械键盘 (Real Mechanical Switch "Thock" & Stem Clack)
 export function playClickSound() {
   if (!soundEnabled) return;
   const ctx = getAudioContext();
@@ -39,50 +39,38 @@ export function playClickSound() {
 
   const now = ctx.currentTime;
 
-  // Transient Pop
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(1800, now);
-  osc.frequency.exponentialRampToValueAtTime(300, now + 0.02);
+  // 1. Bottom-out housing thock (轴心触底沉闷木质声 180Hz -> 60Hz)
+  const thock = ctx.createOscillator();
+  const thockGain = ctx.createGain();
+  thock.type = 'triangle';
+  thock.frequency.setValueAtTime(240, now);
+  thock.frequency.exponentialRampToValueAtTime(55, now + 0.035);
 
-  gain.gain.setValueAtTime(0.1, now);
-  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+  thockGain.gain.setValueAtTime(0.22, now);
+  thockGain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
 
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start(now);
-  osc.stop(now + 0.02);
+  thock.connect(thockGain);
+  thockGain.connect(ctx.destination);
+  thock.start(now);
+  thock.stop(now + 0.035);
 
-  // Micro mechanical housing tick
-  const bufferSize = Math.floor(ctx.sampleRate * 0.015);
-  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
-  }
+  // 2. Leaf ping / stem contact click (弹片与轴心撞击高频清脆切片 3.8kHz)
+  const snap = ctx.createOscillator();
+  const snapGain = ctx.createGain();
+  snap.type = 'sine';
+  snap.frequency.setValueAtTime(3600, now);
+  snap.frequency.exponentialRampToValueAtTime(900, now + 0.012);
 
-  const noise = ctx.createBufferSource();
-  noise.buffer = buffer;
+  snapGain.gain.setValueAtTime(0.08, now);
+  snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.012);
 
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'bandpass';
-  filter.frequency.setValueAtTime(3200, now);
-  filter.Q.setValueAtTime(3, now);
-
-  const noiseGain = ctx.createGain();
-  noiseGain.gain.setValueAtTime(0.08, now);
-  noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.015);
-
-  noise.connect(filter);
-  filter.connect(noiseGain);
-  noiseGain.connect(ctx.destination);
-
-  noise.start(now);
-  noise.stop(now + 0.015);
+  snap.connect(snapGain);
+  snapGain.connect(ctx.destination);
+  snap.start(now);
+  snap.stop(now + 0.012);
 }
 
-// 2. 沉重印章物理盖落砸地声 (Heavy Stamp Thud & Punch)
+// 2. 真实重型物理印章盖印声 (Real Heavy Wooden / Metal Desk Stamp Impact)
 export function playKillSound() {
   if (!soundEnabled) return;
   const ctx = getAudioContext();
@@ -90,54 +78,27 @@ export function playKillSound() {
 
   const now = ctx.currentTime;
 
-  // Low frequency sub-thump (肉感低音下潜)
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(110, now);
-  osc.frequency.exponentialRampToValueAtTime(32, now + 0.16);
+  // 1. Heavy desk table thump (木桌沉重撞击低音 85Hz)
+  const thump = ctx.createOscillator();
+  const thumpGain = ctx.createGain();
+  thump.type = 'sine';
+  thump.frequency.setValueAtTime(95, now);
+  thump.frequency.exponentialRampToValueAtTime(28, now + 0.14);
 
-  gain.gain.setValueAtTime(0.5, now);
-  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+  thumpGain.gain.setValueAtTime(0.65, now);
+  thumpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
 
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start(now);
-  osc.stop(now + 0.16);
+  thump.connect(thumpGain);
+  thumpGain.connect(ctx.destination);
+  thump.start(now);
+  thump.stop(now + 0.14);
 
-  // Mechanical Stamp impact snap (印章木质/金属撞击清脆声)
-  const snapOsc = ctx.createOscillator();
-  const snapGain = ctx.createGain();
-  snapOsc.type = 'triangle';
-  snapOsc.frequency.setValueAtTime(650, now);
-  snapOsc.frequency.exponentialRampToValueAtTime(120, now + 0.05);
-
-  snapGain.gain.setValueAtTime(0.25, now);
-  snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-
-  snapOsc.connect(snapGain);
-  snapGain.connect(ctx.destination);
-  snapOsc.start(now);
-  snapOsc.stop(now + 0.05);
-}
-
-// 3. 真实物理撕纸声 + 气流真空抽离 (Organic Paper Tear & Void Whoosh)
-export function playTearSound() {
-  if (!soundEnabled) return;
-  const ctx = getAudioContext();
-  if (!ctx) return;
-
-  const now = ctx.currentTime;
-
-  // 1. Organic textured paper rip noise (多重撕纸纹理摩擦)
-  const dur = 0.28;
-  const bufferSize = Math.floor(ctx.sampleRate * dur);
+  // 2. Rubber stamp slap transient (印章橡胶面接触纸面清脆啪嗒声)
+  const bufferSize = Math.floor(ctx.sampleRate * 0.04);
   const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
   const data = buffer.getChannelData(0);
   for (let i = 0; i < bufferSize; i++) {
-    // 粗糙撕裂颗粒
-    const grain = Math.sin(i * 0.08) * (Math.random() * 2 - 1);
-    data[i] = grain * (1 - i / bufferSize);
+    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.2));
   }
 
   const noise = ctx.createBufferSource();
@@ -145,89 +106,120 @@ export function playTearSound() {
 
   const filter = ctx.createBiquadFilter();
   filter.type = 'bandpass';
-  filter.frequency.setValueAtTime(1400, now);
-  filter.frequency.linearRampToValueAtTime(600, now + dur);
-  filter.Q.setValueAtTime(1.5, now);
+  filter.frequency.setValueAtTime(1100, now);
+  filter.Q.setValueAtTime(2, now);
 
   const noiseGain = ctx.createGain();
-  noiseGain.gain.setValueAtTime(0.35, now);
-  noiseGain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+  noiseGain.gain.setValueAtTime(0.4, now);
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
 
   noise.connect(filter);
   filter.connect(noiseGain);
   noiseGain.connect(ctx.destination);
 
   noise.start(now);
-  noise.stop(now + dur);
-
-  // 2. Low vacuum drop (气流抽离真空感)
-  const sub = ctx.createOscillator();
-  const subGain = ctx.createGain();
-  sub.type = 'sine';
-  sub.frequency.setValueAtTime(90, now);
-  sub.frequency.exponentialRampToValueAtTime(25, now + dur);
-
-  subGain.gain.setValueAtTime(0.35, now);
-  subGain.gain.exponentialRampToValueAtTime(0.001, now + dur);
-
-  sub.connect(subGain);
-  subGain.connect(ctx.destination);
-  sub.start(now);
-  sub.stop(now + dur);
+  noise.stop(now + 0.04);
 }
 
-// 4. 空灵圣咏/温暖开机跃迁音 (Warm Glass Resonance & Power Up)
+// 3. 真实物理撕纸声采样 (Real Physical Paper Fiber Tearing & Rip)
+export function playTearSound() {
+  if (!soundEnabled) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  const now = ctx.currentTime;
+  const dur = 0.32;
+
+  // 真实纸张纤维撕断颗粒声 (Real Paper Rip Transient Wave)
+  const bufferSize = Math.floor(ctx.sampleRate * dur);
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+
+  for (let i = 0; i < bufferSize; i++) {
+    // 模拟纤维连续断裂的微突触脉冲
+    const progress = i / bufferSize;
+    const fiberBurst = Math.sin(i * 0.15) * Math.cos(i * 0.07);
+    const noise = (Math.random() * 2 - 1) * 0.8;
+    const envelope = Math.sin(progress * Math.PI) * (1 - progress * 0.3);
+    data[i] = (fiberBurst * 0.4 + noise * 0.6) * envelope;
+  }
+
+  const noiseSource = ctx.createBufferSource();
+  noiseSource.buffer = buffer;
+
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(1600, now);
+  filter.frequency.linearRampToValueAtTime(800, now + dur);
+  filter.Q.setValueAtTime(1.8, now);
+
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.45, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+
+  noiseSource.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+
+  noiseSource.start(now);
+  noiseSource.stop(now + dur);
+}
+
+// 4. 真实物理风铃/铜钵空灵共振 (Real Singing Bowl & Chime Modal Resonance)
 export function playRebootSound() {
   if (!soundEnabled) return;
   const ctx = getAudioContext();
   if (!ctx) return;
 
   const now = ctx.currentTime;
+  const harmonics = [
+    { freq: 440, gain: 0.18, decay: 0.6 },
+    { freq: 880, gain: 0.08, decay: 0.4 },
+    { freq: 1320, gain: 0.04, decay: 0.25 },
+  ];
 
-  // Harmonious twin sines (528Hz + 1056Hz 治愈空灵谐波)
-  const freqs = [528, 792];
-  freqs.forEach((freq, idx) => {
+  harmonics.forEach((h) => {
     const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    const gainNode = ctx.createGain();
 
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(freq * 0.8, now);
-    osc.frequency.exponentialRampToValueAtTime(freq, now + 0.08);
+    osc.frequency.setValueAtTime(h.freq, now);
 
-    gain.gain.setValueAtTime(0.001, now);
-    gain.gain.linearRampToValueAtTime(0.15 / (idx + 1), now + 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+    gainNode.gain.setValueAtTime(0.001, now);
+    gainNode.gain.linearRampToValueAtTime(h.gain, now + 0.02);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + h.decay);
 
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+    osc.connect(gainNode);
+    gainNode.connect(ctx.destination);
 
     osc.start(now);
-    osc.stop(now + 0.5);
+    osc.stop(now + h.decay);
   });
 }
 
-// 5. 极微弱盖革计数密文跳动声 (Subtle Data Blips)
+// 5. 真实打字机微动齿轮声 (Real Mechanical Typewriter Escapement Click)
 export function playDecryptSound() {
   if (!soundEnabled) return;
   const ctx = getAudioContext();
   if (!ctx) return;
 
   const now = ctx.currentTime;
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 4; i++) {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    const startTime = now + i * 0.04;
+    const startTime = now + i * 0.035;
 
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(800 + i * 150, startTime);
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(1400 + i * 80, startTime);
+    osc.frequency.exponentialRampToValueAtTime(400, startTime + 0.015);
 
-    gain.gain.setValueAtTime(0.06, startTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.03);
+    gain.gain.setValueAtTime(0.07, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.015);
 
     osc.connect(gain);
     gain.connect(ctx.destination);
 
     osc.start(startTime);
-    osc.stop(startTime + 0.03);
+    osc.stop(startTime + 0.015);
   }
 }
